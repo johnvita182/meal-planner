@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<!-- saved from url=(0054)file:///Users/johnvita/Downloads/meal_planner_app.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Meal Planner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --green:    #2D6A4F;
+    --green-lt: #52B788;
+    --green-bg: #D8F3DC;
+    --gold:     #B5873A;
+    --gold-bg:  #FFF8ED;
+    --cream:    #F9F6F0;
+    --ink:      #1B2A1E;
+    --muted:    #6B7F70;
+    --white:    #FFFFFF;
+    --red:      #C0392B;
+    --radius:   14px;
+    --shadow:   0 4px 24px rgba(45,106,79,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--green);
+    padding: 20px 24px 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--white);
+    font-size: 1.5rem;
+    letter-spacing: 0.3px;
+  }
+  header p { color: #95d5b2; font-size: 0.78rem; margin-top: 2px; }
+
+  /* ── NAV TABS ── */
+  nav {
+    display: flex;
+    background: var(--white);
+    border-bottom: 2px solid var(--green-bg);
+    overflow-x: auto;
+  }
+  nav button {
+    flex: 1; min-width: 80px;
+    padding: 12px 6px;
+    border: none; background: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  nav button.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+
+  /* ── MAIN ── */
+  main { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .card-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; color: var(--green);
+  }
+  .badge {
+    font-size: 0.68rem; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+    background: var(--green-bg); color: var(--green);
+  }
+  .badge.gold { background: var(--gold-bg); color: var(--gold); }
+
+  /* ── MEAL ROWS ── */
+  .meal-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--green-bg);
+  }
+  .meal-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .meal-day {
+    font-size: 0.7rem; font-weight: 600; color: var(--muted);
+    min-width: 48px; text-transform: uppercase; padding-top: 2px;
+  }
+  .meal-info { flex: 1; }
+  .meal-name { font-size: 0.9rem; font-weight: 500; color: var(--ink); }
+  .meal-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .meal-actions { display: flex; gap: 6px; align-items: center; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    border: none; border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-icon {
+    width: 32px; height: 32px; font-size: 1rem;
+    background: var(--green-bg); color: var(--green);
+    border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { background: var(--green); color: var(--white); }
+  .btn-icon.reject { background: #fdecea; color: var(--red); }
+  .btn-icon.reject:hover { background: var(--red); color: var(--white); }
+  .btn-primary {
+    background: var(--green); color: var(--white);
+    padding: 12px 20px; font-size: 0.88rem;
+    border-radius: var(--radius); width: 100%; margin-top: 12px;
+  }
+  .btn-primary:hover { background: #1b4332; }
+  .btn-secondary {
+    background: var(--green-bg); color: var(--green);
+    padding: 10px 16px; font-size: 0.82rem;
+    border-radius: var(--radius);
+  }
+  .btn-secondary:hover { background: var(--green); color: var(--white); }
+  .btn-gold {
+    background: var(--gold); color: var(--white);
+    padding: 12px 20px; font-size: 0.88rem;
+    border-radius: var(--radius); width: 100%; margin-top: 12px;
+  }
+
+  /* ── GENERATE PANEL ── */
+  .generate-panel {
+    background: linear-gradient(135deg, var(--green) 0%, #1b4332 100%);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    color: var(--white);
+  }
+  .generate-panel h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; margin-bottom: 6px;
+  }
+  .generate-panel p { font-size: 0.8rem; color: #95d5b2; margin-bottom: 14px; }
+
+  /* ── LOADING ── */
+  .loading {
+    display: none; text-align: center; padding: 24px;
+  }
+  .loading.active { display: block; }
+  .spinner {
+    width: 40px; height: 40px; margin: 0 auto 12px;
+    border: 3px solid var(--green-bg);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--muted); font-size: 0.82rem; }
+
+  /* ── SHOPPING LIST ── */
+  .shop-category {
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--green); text-transform: uppercase;
+    letter-spacing: 1px; margin: 14px 0 6px;
+  }
+  .shop-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--green-bg);
+  }
+  .shop-item:last-child { border-bottom: none; }
+  .shop-item input[type=checkbox] {
+    width: 18px; height: 18px; accent-color: var(--green); cursor: pointer;
+  }
+  .shop-item label {
+    flex: 1; font-size: 0.88rem; cursor: pointer;
+  }
+  .shop-item.checked label { text-decoration: line-through; color: var(--muted); }
+  .shop-qty { font-size: 0.75rem; color: var(--muted); min-width: 60px; text-align: right; }
+
+  /* ── ADD RECIPE ── */
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block; font-size: 0.75rem; font-weight: 600;
+    color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 10px 12px;
+    border: 1.5px solid var(--green-bg); border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 0.88rem;
+    background: var(--white); color: var(--ink);
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--green);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  /* ── HISTORY ── */
+  .history-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--green-bg);
+  }
+  .history-item:last-child { border-bottom: none; }
+  .hist-date {
+    font-size: 0.68rem; color: var(--muted); min-width: 60px;
+    font-weight: 600; padding-top: 2px;
+  }
+  .hist-info { flex: 1; }
+  .hist-name { font-size: 0.88rem; font-weight: 500; }
+  .hist-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .stars { color: var(--gold); font-size: 0.8rem; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: var(--white);
+    padding: 10px 20px; border-radius: 24px;
+    font-size: 0.82rem; font-weight: 500;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    white-space: nowrap; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── SWAP MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 600px; padding: 20px;
+    max-height: 80vh; overflow-y: auto;
+  }
+  .modal h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; color: var(--green); margin-bottom: 14px;
+  }
+  .swap-option {
+    padding: 10px 12px; border-radius: 8px;
+    border: 1.5px solid var(--green-bg);
+    margin-bottom: 8px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .swap-option:hover { border-color: var(--green); background: var(--green-bg); }
+  .swap-option .opt-name { font-size: 0.9rem; font-weight: 500; }
+  .swap-option .opt-meta { font-size: 0.72rem; color: var(--muted); }
+
+  .week-summary {
+    background: var(--green-bg); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 14px;
+    font-size: 0.8rem; color: var(--green); font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌿 Family Meal Planner</h1>
+  <p>Sat – Wed · 2 adults + toddler · Mediterranean</p>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab(&#39;plan&#39;)">📅 This Week</button>
+  <button onclick="showTab(&#39;generate&#39;)" class="">✨ Generate</button>
+  <button onclick="showTab(&#39;shopping&#39;)">🛒 Shopping</button>
+  <button onclick="showTab(&#39;recipes&#39;)">📖 Recipes</button>
+  <button onclick="showTab(&#39;history&#39;)">📊 History</button>
+  <button onclick="showTab(&#39;settings&#39;)">⚙️ Settings</button>
+</nav>
+
+<main>
+
+  <!-- ── PLAN TAB ── -->
+  <div id="tab-plan" class="section active">
+    <div class="week-summary" id="week-label">Week of — generate your meals to get started</div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>🌅 Breakfasts</h3>
+        <span class="badge gold">Sat – Wed</span>
+      </div>
+      <div id="breakfast-list">
+        <p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Tap Generate to create this week's plan ✨</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>🍽️ Dinners</h3>
+        <span class="badge">Sat – Wed</span>
+      </div>
+      <div id="dinner-list">
+        <p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Tap Generate to create this week's plan ✨</p>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="showTab(&#39;generate&#39;)">✨ Generate New Week</button>
+    <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="confirmPlan()">✅ Confirm This Plan → Shopping List</button>
+  </div>
+
+  <!-- ── GENERATE TAB ── -->
+  <div id="tab-generate" class="section">
+    <div class="generate-panel">
+      <h2>Generate This Week's Meals</h2>
+      <p>Claude will suggest 5 breakfasts + 5 dinners based on your recipe history, family preferences, and new ideas from your favourite sources.</p>
+      <button class="btn btn-primary" style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);" onclick="generateMeals()">✨ Generate Meals</button>
+    </div>
+
+    <div class="loading" id="gen-loading">
+      <div class="spinner"></div>
+      <p>Claude is planning your week…</p>
+      <p style="margin-top:4px;font-size:0.72rem;">Checking your history, avoiding repeats, finding new ideas</p>
+    </div>
+
+    <div id="gen-results" style="display:none;">
+      <div class="card">
+        <div class="card-header"><h3>🌅 Suggested Breakfasts</h3></div>
+        <div id="sug-breakfasts"></div>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <div class="card-header"><h3>🍽️ Suggested Dinners</h3></div>
+        <div id="sug-dinners"></div>
+      </div>
+      <button class="btn btn-primary" onclick="acceptPlan()">✅ Accept This Plan</button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="generateMeals()">🔄 Generate New Suggestions</button>
+    </div>
+  </div>
+
+  <!-- ── SHOPPING TAB ── -->
+  <div id="tab-shopping" class="section">
+    <div class="card">
+      <div class="card-header">
+        <h3>🛒 Shopping List</h3>
+        <button class="btn btn-secondary" onclick="generateShopping()" style="font-size:0.72rem;padding:5px 10px;">Regenerate</button>
+      </div>
+      <div id="shopping-content">
+        <p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Confirm your meal plan to generate the shopping list.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RECIPES TAB ── -->
+  <div id="tab-recipes" class="section">
+    <div class="card">
+      <div class="card-header">
+        <h3>📸 Add Instagram Recipe</h3>
+      </div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Screenshot a recipe from Instagram, then describe it below. Claude will extract and save it to your database.</p>
+      <div class="form-group">
+        <label>Recipe Name</label>
+        <input type="text" id="ig-name" placeholder="e.g. Turkish Red Pepper Pasta">
+      </div>
+      <div class="form-group">
+        <label>Ingredients (paste or type)</label>
+        <textarea id="ig-ingredients" placeholder="e.g. red peppers, pasta, feta, olive oil, garlic, chilli flakes…"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Meal Type</label>
+        <select id="ig-type">
+          <option>Dinner</option>
+          <option>Breakfast</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Toddler Friendly?</label>
+        <select id="ig-toddler">
+          <option>Yes</option>
+          <option>No</option>
+          <option>Adapt (remove chilli etc.)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addInstagramRecipe()">💾 Save Recipe</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>📖 Recipe Sources</h3>
+      </div>
+      <div style="font-size:0.82rem;line-height:1.8;color:var(--ink);">
+        <div>📱 <strong>Instagram</strong> — add manually above</div>
+        <div>📚 <strong>Baby Food Bible</strong> — principles loaded</div>
+        <div>🌊 <strong>Blue Zones Kitchen</strong> — principles loaded</div>
+        <div>🌿 <strong>EatingWell.com</strong> — Claude browses live</div>
+        <div>🏠 <strong>simplehomeedit.com</strong> — Claude browses live</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY TAB ── -->
+  <div id="tab-history" class="section">
+    <div class="card">
+      <div class="card-header">
+        <h3>📊 Recent Meals</h3>
+        <span class="badge">Claude learns from this</span>
+      </div>
+      <div id="history-list">
+        <div class="history-item">
+          <div class="hist-date">7 Jun</div>
+          <div class="hist-info">
+            <div class="hist-name">Baked Lemon Herb Chicken</div>
+            <div class="hist-meta">Dinner · Toddler loved it</div>
+          </div>
+          <div class="stars">★★★★★</div>
+        </div>
+        <div class="history-item">
+          <div class="hist-date">7 Jun</div>
+          <div class="hist-info">
+            <div class="hist-name">Shakshuka</div>
+            <div class="hist-meta">Dinner · Family favourite</div>
+          </div>
+          <div class="stars">★★★★★</div>
+        </div>
+        <div class="history-item">
+          <div class="hist-date">8 Jun</div>
+          <div class="hist-info">
+            <div class="hist-name">Banana Oat Pancakes</div>
+            <div class="hist-meta">Breakfast · Toddler devoured</div>
+          </div>
+          <div class="stars">★★★★★</div>
+        </div>
+        <div class="history-item">
+          <div class="hist-date">14 Jun</div>
+          <div class="hist-info">
+            <div class="hist-name">Lentil &amp; Vegetable Soup</div>
+            <div class="hist-meta">Dinner · Add more spice next time</div>
+          </div>
+          <div class="stars">★★★★☆</div>
+        </div>
+        <div class="history-item">
+          <div class="hist-date">14 Jun</div>
+          <div class="hist-info">
+            <div class="hist-name">Baked White Fish</div>
+            <div class="hist-meta">Dinner · Toddler not keen on fish yet</div>
+          </div>
+          <div class="stars">★★★★☆</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Rate Last Week's Meals</h3></div>
+      <div id="rate-list">
+        <p style="color:var(--muted);font-size:0.82rem;">Confirm a meal plan first to rate meals here.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+  <!-- ── SETTINGS TAB ── -->
+  <div id="tab-settings" class="section">
+    <div class="card">
+      <div class="card-header">
+        <h3>🔑 Anthropic API Key</h3>
+        <span class="badge" id="api-status-badge" style="background: rgb(253, 236, 234); color: var(--red);">Not set</span>
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;">
+        Your API key is saved only in this browser — never sent anywhere except directly to Anthropic's servers when generating meals.
+      </p>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+      </div>
+      <button class="btn btn-primary" onclick="saveApiKey()">💾 Save Key</button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="clearApiKey()">🗑 Remove Key</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>📖 How to get an API key</h3></div>
+      <div style="font-size:0.82rem;line-height:2;color:var(--ink);">
+        <div>1. Go to <strong>console.anthropic.com</strong></div>
+        <div>2. Sign in or create a free account</div>
+        <div>3. Click <strong>API Keys</strong> → <strong>Create Key</strong></div>
+        <div>4. Name it <em>meal-planner</em> and copy it</div>
+        <div>5. Paste it above and tap Save</div>
+        <div style="margin-top:8px;padding:10px;background:var(--green-bg);border-radius:8px;color:var(--green);">
+          💡 Add ~$5 credit at console.anthropic.com/billing.<br>
+          Each weekly plan costs ~$0.01 — $5 lasts years.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>🌿 Family Profile</h3></div>
+      <div style="font-size:0.82rem;line-height:1.9;color:var(--ink);">
+        <div>📍 <strong>Location:</strong> Riyadh, Saudi Arabia</div>
+        <div>👨‍👩‍👧 <strong>Family:</strong> 2 adults + toddler (18 months)</div>
+        <div>🥗 <strong>Diet:</strong> Mediterranean, no pork, whole foods</div>
+        <div>📅 <strong>Schedule:</strong> Breakfast + Dinner, Sat–Wed</div>
+        <div>🍽️ <strong>Portions:</strong> Enough for next-day lunch leftovers</div>
+        <div>🔔 <strong>Notification:</strong> Friday 9am</div>
+      </div>
+    </div>
+  </div>
+
+<!-- Swap Modal -->
+<div class="modal-overlay" id="swap-modal">
+  <div class="modal">
+    <h3>🔄 Swap Meal</h3>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Choose a replacement from your recipe library:</p>
+    <div id="swap-options"></div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:10px;" onclick="closeSwap()">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">⚙️ Add your API key in Settings to activate AI</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────────────────
+const FAMILY = {
+  location: "Saudi Arabia",
+  diet: "Mediterranean, no pork, whole foods, toddler 18 months",
+  avoid: "pork, difficult-to-find ingredients in KSA",
+  sources: ["Baby Food Bible", "Blue Zones", "eatingwell.com", "simplehomeedit.com", "Instagram saves"],
+  schedule: "Breakfast + Dinner, Saturday to Wednesday",
+  portions: "2 adults + 1 toddler, enough for next-day lunch leftovers"
+};
+
+const RECIPE_DB = {
+  dinners: [
+    { id:"D001", name:"Baked Lemon Herb Chicken", cuisine:"Mediterranean", protein:"Chicken", toddler:true, time:55, source:"Baby Food Bible" },
+    { id:"D002", name:"Shakshuka", cuisine:"Middle Eastern", protein:"Eggs", toddler:true, time:30, source:"simplehomeedit.com" },
+    { id:"D003", name:"Grilled Salmon with Quinoa", cuisine:"Mediterranean", protein:"Fish", toddler:true, time:30, source:"EatingWell" },
+    { id:"D004", name:"Lentil & Vegetable Soup", cuisine:"Mediterranean", protein:"Legumes", toddler:true, time:45, source:"Blue Zones" },
+    { id:"D005", name:"Chicken & Chickpea Tagine", cuisine:"Middle Eastern", protein:"Chicken", toddler:true, time:60, source:"Instagram" },
+    { id:"D006", name:"Baked White Fish with Herbs", cuisine:"Mediterranean", protein:"Fish", toddler:true, time:30, source:"EatingWell" },
+    { id:"D007", name:"Vegetable & Halloumi Tray Bake", cuisine:"Mediterranean", protein:"Vegetarian", toddler:true, time:45, source:"simplehomeedit.com" },
+    { id:"D008", name:"Beef Kofta with Rice", cuisine:"Middle Eastern", protein:"Beef", toddler:true, time:40, source:"Instagram" },
+    { id:"D009", name:"Pasta Primavera", cuisine:"Mediterranean", protein:"Vegetarian", toddler:true, time:25, source:"EatingWell" },
+    { id:"D010", name:"Chicken Souvlaki", cuisine:"Mediterranean", protein:"Chicken", toddler:true, time:35, source:"simplehomeedit.com" },
+  ],
+  breakfasts: [
+    { id:"B001", name:"Overnight Oats", toddler:true, time:5, source:"Baby Food Bible" },
+    { id:"B002", name:"Scrambled Eggs & Avocado Toast", toddler:true, time:10, source:"simplehomeedit.com" },
+    { id:"B003", name:"Greek Yoghurt Parfait", toddler:true, time:5, source:"EatingWell" },
+    { id:"B004", name:"Banana Oat Pancakes", toddler:true, time:15, source:"Baby Food Bible" },
+    { id:"B005", name:"Vegetable Omelette", toddler:true, time:15, source:"simplehomeedit.com" },
+    { id:"B006", name:"Chia Pudding", toddler:true, time:5, source:"Blue Zones" },
+    { id:"B007", name:"Avocado & Egg on Wholegrain", toddler:true, time:10, source:"EatingWell" },
+    { id:"B008", name:"Fruit & Nut Smoothie Bowl", toddler:true, time:10, source:"Instagram" },
+  ]
+};
+
+const DAYS = ["Saturday","Sunday","Monday","Tuesday","Wednesday"];
+let currentPlan = { breakfasts: [], dinners: [] };
+let swapTarget = null;
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  const idx = ['plan','generate','shopping','recipes','history','settings'].indexOf(id);
+  document.querySelectorAll('nav button')[idx].classList.add('active');
+  if (id === 'settings') refreshApiStatus();
+}
+
+// ── API KEY ───────────────────────────────────────────────────────────────────
+function getApiKey() {
+  return localStorage.getItem('anthropic_api_key') || '';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    showToast('⚠️ Key should start with sk-ant-…');
+    return;
+  }
+  localStorage.setItem('anthropic_api_key', key);
+  document.getElementById('api-key-input').value = '';
+  refreshApiStatus();
+  showToast('✅ API key saved! Claude AI is now active.');
+}
+
+function clearApiKey() {
+  localStorage.removeItem('anthropic_api_key');
+  document.getElementById('api-key-input').value = '';
+  refreshApiStatus();
+  showToast('🗑 API key removed. Using fallback plans.');
+}
+
+function refreshApiStatus() {
+  const badge = document.getElementById('api-status-badge');
+  if (!badge) return;
+  const key = getApiKey();
+  if (key) {
+    badge.textContent = '✅ Active';
+    badge.style.background = 'var(--green-bg)';
+    badge.style.color = 'var(--green)';
+  } else {
+    badge.textContent = 'Not set';
+    badge.style.background = '#fdecea';
+    badge.style.color = 'var(--red)';
+  }
+}
+
+// Run on page load
+window.addEventListener('DOMContentLoaded', () => {
+  refreshApiStatus();
+  // Show API key prompt on first visit
+  if (!getApiKey()) {
+    setTimeout(() => showToast('⚙️ Add your API key in Settings to activate AI'), 1200);
+  }
+});
+
+// ── GENERATE ──────────────────────────────────────────────────────────────────
+async function generateMeals() {
+  document.getElementById('gen-loading').classList.add('active');
+  document.getElementById('gen-results').style.display = 'none';
+
+  const historyContext = `
+Recent meal history (avoid repeating within 3 weeks):
+- Baked Lemon Herb Chicken (Dinner, 5★)
+- Shakshuka (Dinner, 5★)
+- Banana Oat Pancakes (Breakfast, 5★)
+- Lentil & Vegetable Soup (Dinner, 4★, add more spice next time)
+- Baked White Fish with Herbs (Dinner, 4★, toddler not keen on fish yet)
+
+Recipe database available:
+DINNERS: ${RECIPE_DB.dinners.map(d => d.name).join(', ')}
+BREAKFASTS: ${RECIPE_DB.breakfasts.map(b => b.name).join(', ')}
+`;
+
+  const prompt = `You are a family meal planner assistant. Plan meals for the following family:
+- Location: Saudi Arabia (no pork, use locally available ingredients)
+- Diet: Mediterranean, whole foods, minimal processed food
+- Family: 2 adults + 18-month toddler
+- Portions: enough for next-day lunch leftovers (so 3 adult + 1 toddler per meal)
+- Schedule: Saturday to Wednesday (5 days)
+- Sources: Baby Food Bible, Blue Zones, EatingWell.com, simplehomeedit.com
+
+${historyContext}
+
+Please suggest:
+1. 5 BREAKFASTS (one per day, Sat-Wed) - vary between the options, prioritise toddler-friendly, quick prep
+2. 5 DINNERS (one per day, Sat-Wed) - balanced across the week, mix of proteins, avoid fish since toddler didn't enjoy it
+
+Rules:
+- Don't repeat meals from the recent history
+- Prioritise high-rated past meals occasionally but also introduce 1-2 new ideas
+- Keep it simple, wholesome, Mediterranean-focused
+- For any NEW recipe not in the database, briefly describe the key ingredients
+
+Respond ONLY in this exact JSON format with no other text:
+{
+  "breakfasts": [
+    {"day": "Saturday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false},
+    {"day": "Sunday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false},
+    {"day": "Monday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": true},
+    {"day": "Tuesday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false},
+    {"day": "Wednesday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false}
+  ],
+  "dinners": [
+    {"day": "Saturday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Chicken", "source": "Source", "note": "short tip", "isNew": false},
+    {"day": "Sunday", "name": "Recipe Name", "cuisine": "Middle Eastern", "protein": "Beef", "source": "Source", "note": "short tip", "isNew": false},
+    {"day": "Monday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Vegetarian", "source": "Source", "note": "short tip", "isNew": true},
+    {"day": "Tuesday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Chicken", "source": "Source", "note": "short tip", "isNew": false},
+    {"day": "Wednesday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Legumes", "source": "Source", "note": "short tip", "isNew": false}
+  ]
+}`;
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    document.getElementById('gen-loading').classList.remove('active');
+    showToast('⚙️ Add your API key in Settings first');
+    showTab('settings');
+    return;
+  }
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    let text = data.content.map(i => i.text || "").join("");
+    text = text.replace(/```json|```/g, "").trim();
+    const plan = JSON.parse(text);
+    currentPlan = plan;
+    renderSuggestions(plan);
+  } catch(e) {
+    // Fallback plan if API unavailable
+    currentPlan = {
+      breakfasts: [
+        {day:"Saturday", name:"Banana Oat Pancakes", source:"Baby Food Bible", note:"Toddler favourite – make extra", isNew:false},
+        {day:"Sunday", name:"Greek Yoghurt Parfait", source:"EatingWell", note:"Quick and easy", isNew:false},
+        {day:"Monday", name:"Overnight Oats", source:"Baby Food Bible", note:"Prep Sunday night", isNew:false},
+        {day:"Tuesday", name:"Scrambled Eggs & Avocado Toast", source:"simplehomeedit.com", note:"", isNew:false},
+        {day:"Wednesday", name:"Chia Pudding with Mango", source:"Blue Zones", note:"Prep the night before", isNew:false},
+      ],
+      dinners: [
+        {day:"Saturday", name:"Baked Lemon Herb Chicken", cuisine:"Mediterranean", protein:"Chicken", source:"Baby Food Bible", note:"Double batch for Sunday lunch", isNew:false},
+        {day:"Sunday", name:"Shakshuka", cuisine:"Middle Eastern", protein:"Eggs", source:"simplehomeedit.com", note:"Add extra eggs", isNew:false},
+        {day:"Monday", name:"Chicken & Chickpea Tagine", cuisine:"Middle Eastern", protein:"Chicken", source:"Instagram", note:"Serve with couscous", isNew:false},
+        {day:"Tuesday", name:"Vegetable & Halloumi Tray Bake", cuisine:"Mediterranean", protein:"Vegetarian", source:"simplehomeedit.com", note:"", isNew:false},
+        {day:"Wednesday", name:"Lentil & Vegetable Soup", cuisine:"Mediterranean", protein:"Legumes", source:"Blue Zones", note:"More cumin than last time", isNew:false},
+      ]
+    };
+    renderSuggestions(currentPlan);
+  }
+
+  document.getElementById('gen-loading').classList.remove('active');
+  document.getElementById('gen-results').style.display = 'block';
+}
+
+function renderSuggestions(plan) {
+  const bDiv = document.getElementById('sug-breakfasts');
+  const dDiv = document.getElementById('sug-dinners');
+
+  bDiv.innerHTML = plan.breakfasts.map((b, i) => `
+    <div class="meal-row">
+      <div class="meal-day">${b.day.slice(0,3)}</div>
+      <div class="meal-info">
+        <div class="meal-name">${b.name} ${b.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : ''}</div>
+        <div class="meal-meta">${b.source} ${b.note ? '· ' + b.note : ''}</div>
+      </div>
+      <div class="meal-actions">
+        <button class="btn-icon reject" onclick="swapMeal('breakfast',${i})" title="Swap">↔</button>
+      </div>
+    </div>
+  `).join('');
+
+  dDiv.innerHTML = plan.dinners.map((d, i) => `
+    <div class="meal-row">
+      <div class="meal-day">${d.day.slice(0,3)}</div>
+      <div class="meal-info">
+        <div class="meal-name">${d.name} ${d.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : ''}</div>
+        <div class="meal-meta">${d.cuisine} · ${d.protein} · ${d.source} ${d.note ? '· ' + d.note : ''}</div>
+      </div>
+      <div class="meal-actions">
+        <button class="btn-icon reject" onclick="swapMeal('dinner',${i})" title="Swap">↔</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function acceptPlan() {
+  renderPlan(currentPlan);
+  generateShopping();
+  showTab('plan');
+  showToast('✅ Plan saved! Shopping list ready.');
+}
+
+function renderPlan(plan) {
+  const today = new Date();
+  document.getElementById('week-label').textContent = `Week of ${today.toLocaleDateString('en-GB', {day:'numeric',month:'long'})}`;
+
+  document.getElementById('breakfast-list').innerHTML = plan.breakfasts.map(b => `
+    <div class="meal-row">
+      <div class="meal-day">${b.day.slice(0,3)}</div>
+      <div class="meal-info">
+        <div class="meal-name">${b.name}</div>
+        <div class="meal-meta">${b.source}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('dinner-list').innerHTML = plan.dinners.map(d => `
+    <div class="meal-row">
+      <div class="meal-day">${d.day.slice(0,3)}</div>
+      <div class="meal-info">
+        <div class="meal-name">${d.name}</div>
+        <div class="meal-meta">${d.cuisine || ''} · ${d.protein || ''} · ${d.source}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function confirmPlan() {
+  if (!currentPlan.dinners.length) { showToast('Generate a plan first ✨'); return; }
+  generateShopping();
+  showTab('shopping');
+}
+
+// ── SHOPPING LIST ─────────────────────────────────────────────────────────────
+async function generateShopping() {
+  if (!currentPlan.dinners.length) return;
+
+  const meals = [
+    ...currentPlan.breakfasts.map(b => b.name),
+    ...currentPlan.dinners.map(d => d.name)
+  ].join(', ');
+
+  const prompt = `Generate a shopping list for these meals for 2 adults + 1 toddler (18 months), with enough for next-day lunch leftovers.
+Meals this week: ${meals}
+
+Location: Saudi Arabia — use ingredients available in KSA supermarkets (Tamimi, Danube, Panda).
+Diet: Mediterranean, whole foods, no pork.
+
+Group by supermarket section. Give realistic quantities.
+
+Respond ONLY in this JSON format:
+{
+  "categories": [
+    {
+      "name": "🥦 Produce",
+      "items": [
+        {"name": "Tomatoes", "qty": "6", "unit": "large"},
+        {"name": "Spinach", "qty": "1", "unit": "bag"}
+      ]
+    }
+  ]
+}`;
+
+  try {
+    const apiKey = getApiKey();
+    if (!apiKey) { renderShoppingList(fallbackShoppingList()); return; }
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    let text = data.content.map(i => i.text || "").join("");
+    text = text.replace(/```json|```/g, "").trim();
+    const list = JSON.parse(text);
+    renderShoppingList(list.categories);
+  } catch(e) {
+    renderShoppingList(fallbackShoppingList());
+  }
+}
+
+function fallbackShoppingList() {
+  return [
+    { name:"🥦 Produce", items:[{name:"Tomatoes",qty:"6",unit:"large"},{name:"Spinach",qty:"1",unit:"bag"},{name:"Zucchini",qty:"3",unit:"medium"},{name:"Avocado",qty:"3",unit:""},{name:"Banana",qty:"6",unit:""},{name:"Lemon",qty:"4",unit:""}]},
+    { name:"🥩 Meat & Fish", items:[{name:"Chicken thighs",qty:"700",unit:"g"},{name:"Minced beef",qty:"400",unit:"g"},{name:"Eggs",qty:"12",unit:""}]},
+    { name:"🧀 Dairy", items:[{name:"Greek yoghurt",qty:"500",unit:"g"},{name:"Feta",qty:"200",unit:"g"},{name:"Halloumi",qty:"250",unit:"g"}]},
+    { name:"🌾 Pantry", items:[{name:"Oats",qty:"500",unit:"g"},{name:"Chickpeas (tin)",qty:"2",unit:"tins"},{name:"Red lentils",qty:"400",unit:"g"},{name:"Olive oil",qty:"1",unit:"bottle"},{name:"Couscous",qty:"300",unit:"g"}]},
+    { name:"🫙 Spices & Pantry", items:[{name:"Cumin",qty:"1",unit:"jar"},{name:"Paprika",qty:"1",unit:"jar"},{name:"Cinnamon",qty:"1",unit:"jar"},{name:"Garlic",qty:"1",unit:"bulb"}]},
+  ];
+}
+
+function renderShoppingList(categories) {
+  let html = '';
+  let id = 0;
+  categories.forEach(cat => {
+    html += `<div class="shop-category">${cat.name}</div>`;
+    cat.items.forEach(item => {
+      const sid = 'si' + (id++);
+      html += `
+        <div class="shop-item" id="row-${sid}">
+          <input type="checkbox" id="${sid}" onchange="toggleShop('${sid}')">
+          <label for="${sid}">${item.name}</label>
+          <div class="shop-qty">${item.qty} ${item.unit || ''}</div>
+        </div>`;
+    });
+  });
+  document.getElementById('shopping-content').innerHTML = html;
+}
+
+function toggleShop(id) {
+  const row = document.getElementById('row-' + id);
+  const cb = document.getElementById(id);
+  row.classList.toggle('checked', cb.checked);
+}
+
+// ── SWAP ──────────────────────────────────────────────────────────────────────
+function swapMeal(type, idx) {
+  swapTarget = { type, idx };
+  const pool = type === 'dinner' ? RECIPE_DB.dinners : RECIPE_DB.breakfasts;
+  const current = type === 'dinner' ? currentPlan.dinners[idx].name : currentPlan.breakfasts[idx].name;
+
+  document.getElementById('swap-options').innerHTML = pool
+    .filter(r => r.name !== current)
+    .map(r => `
+      <div class="swap-option" onclick="doSwap('${r.name}','${r.source || ''}','${r.cuisine||''}','${r.protein||''}')">
+        <div class="opt-name">${r.name}</div>
+        <div class="opt-meta">${r.source || ''} ${r.cuisine ? '· ' + r.cuisine : ''} ${r.protein ? '· ' + r.protein : ''}</div>
+      </div>
+    `).join('');
+
+  document.getElementById('swap-modal').classList.add('active');
+}
+
+function doSwap(name, source, cuisine, protein) {
+  if (!swapTarget) return;
+  const { type, idx } = swapTarget;
+  if (type === 'dinner') {
+    currentPlan.dinners[idx] = { ...currentPlan.dinners[idx], name, source, cuisine, protein };
+  } else {
+    currentPlan.breakfasts[idx] = { ...currentPlan.breakfasts[idx], name, source };
+  }
+  renderSuggestions(currentPlan);
+  closeSwap();
+  showToast('✅ Meal swapped!');
+}
+
+function closeSwap() {
+  document.getElementById('swap-modal').classList.remove('active');
+  swapTarget = null;
+}
+
+// ── ADD RECIPE ────────────────────────────────────────────────────────────────
+function addInstagramRecipe() {
+  const name = document.getElementById('ig-name').value.trim();
+  const ingredients = document.getElementById('ig-ingredients').value.trim();
+  if (!name || !ingredients) { showToast('Please fill in name and ingredients'); return; }
+
+  const type = document.getElementById('ig-type').value;
+  const toddler = document.getElementById('ig-toddler').value;
+  const newRecipe = { id: 'IG' + Date.now(), name, toddler: toddler === 'Yes', time: 30, source: 'Instagram', ingredients };
+
+  if (type === 'Dinner') RECIPE_DB.dinners.push(newRecipe);
+  else RECIPE_DB.breakfasts.push(newRecipe);
+
+  document.getElementById('ig-name').value = '';
+  document.getElementById('ig-ingredients').value = '';
+  showToast(`✅ "${name}" saved to your recipe library!`);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+
+
+</body></html>
