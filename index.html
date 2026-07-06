@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0056)file:///Users/johnvita/Downloads/meal_planner_app_2.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Family Meal Planner</title>
 <style>
@@ -279,12 +279,12 @@
 </header>
 
 <nav>
-  <button class="active" onclick="showTab(&#39;plan&#39;)">📅 This Week</button>
-  <button onclick="showTab(&#39;generate&#39;)">✨ Generate</button>
-  <button onclick="showTab(&#39;shopping&#39;)">🛒 Shopping</button>
-  <button onclick="showTab(&#39;recipes&#39;)">📖 Recipes</button>
-  <button onclick="showTab(&#39;history&#39;)">📊 History</button>
-  <button onclick="showTab(&#39;settings&#39;)">⚙️ Settings</button>
+  <button class="active" onclick="showTab('plan')">📅 This Week</button>
+  <button onclick="showTab('generate')">✨ Generate</button>
+  <button onclick="showTab('shopping')">🛒 Shopping</button>
+  <button onclick="showTab('recipes')">📖 Recipes</button>
+  <button onclick="showTab('history')">📊 History</button>
+  <button onclick="showTab('settings')">⚙️ Settings</button>
 </nav>
 
 <main>
@@ -313,7 +313,7 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" onclick="showTab(&#39;generate&#39;)">✨ Generate New Week</button>
+    <button class="btn btn-primary" onclick="showTab('generate')">✨ Generate New Week</button>
     <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="confirmPlan()">✅ Confirm This Plan → Shopping List</button>
   </div>
 
@@ -440,7 +440,7 @@
         <div class="history-item">
           <div class="hist-date">14 Jun</div>
           <div class="hist-info">
-            <div class="hist-name">Lentil &amp; Vegetable Soup</div>
+            <div class="hist-name">Lentil & Vegetable Soup</div>
             <div class="hist-meta">Dinner · Add more spice next time</div>
           </div>
           <div class="stars">★★★★☆</div>
@@ -471,7 +471,7 @@
     <div class="card">
       <div class="card-header">
         <h3>🔑 Anthropic API Key</h3>
-        <span class="badge" id="api-status-badge" style="background: var(--green-bg); color: var(--green);">✅ Active</span>
+        <span class="badge" id="api-status-badge">Not set</span>
       </div>
       <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;">
         Your API key is saved only in this browser — never sent anywhere except directly to Anthropic's servers when generating meals.
@@ -508,6 +508,20 @@
         <div>📅 <strong>Schedule:</strong> Breakfast + Dinner, Sat–Wed</div>
         <div>🍽️ <strong>Portions:</strong> Enough for next-day lunch leftovers</div>
         <div>🔔 <strong>Notification:</strong> Friday 9am</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>📊 Recipe Database</h3></div>
+      <div style="font-size:0.82rem;line-height:1.9;color:var(--ink);">
+        <div>Your recipe database lives in Google Sheets.</div>
+        <div style="margin-top:10px;">
+          <a href="https://docs.google.com/spreadsheets/d/1hRhHmuph67KQGs8weetFEa-iEpC-bZx-EIeMQDp-WUA/edit" 
+             target="_blank"
+             style="display:block;background:var(--green);color:white;text-align:center;padding:10px;border-radius:10px;text-decoration:none;font-weight:600;">
+            📊 Open Google Sheet
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -958,6 +972,5 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 </script>
-
-
-</body></html>
+</body>
+</html>
