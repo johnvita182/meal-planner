@@ -332,6 +332,7 @@
     </div>
 
     <div id="gen-results" style="display:none;">
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px;">✔️ Check the meals you want to keep, then regenerate just the rest — or accept the whole plan as-is.</p>
       <div class="card">
         <div class="card-header"><h3>🌅 Suggested Breakfasts</h3></div>
         <div id="sug-breakfasts"></div>
@@ -341,7 +342,7 @@
         <div id="sug-dinners"></div>
       </div>
       <button class="btn btn-primary" onclick="acceptPlan()">✅ Accept This Plan</button>
-      <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="generateMeals()">🔄 Generate New Suggestions</button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="generateMeals(true)">🔄 Keep Checked, Regenerate the Rest</button>
     </div>
   </div>
 
@@ -549,30 +550,85 @@ const FAMILY = {
   portions: "2 adults + 1 toddler, enough for next-day lunch leftovers"
 };
 
+// Synced from the Family Meal Planner Google Sheet (Dinner Recipes / Breakfast Recipes tabs).
+// Re-run the sync (ask Claude) whenever new recipes are added to the sheet so this list stays current.
+// Excluded cuisines: none currently — Tagine dishes are deliberately excluded (family doesn't like them).
+const EXCLUDED_CUISINES = ["tagine"]; // lowercase keywords to always filter out of DB pulls + AI generation
+
 const RECIPE_DB = {
   dinners: [
-    { id:"D001", name:"Baked Lemon Herb Chicken", cuisine:"Mediterranean", protein:"Chicken", toddler:true, time:55, source:"Baby Food Bible" },
-    { id:"D002", name:"Shakshuka", cuisine:"Middle Eastern", protein:"Eggs", toddler:true, time:30, source:"simplehomeedit.com" },
-    { id:"D003", name:"Grilled Salmon with Quinoa", cuisine:"Mediterranean", protein:"Fish", toddler:true, time:30, source:"EatingWell" },
-    { id:"D004", name:"Lentil & Vegetable Soup", cuisine:"Mediterranean", protein:"Legumes", toddler:true, time:45, source:"Blue Zones" },
-    { id:"D005", name:"Chicken & Chickpea Tagine", cuisine:"Middle Eastern", protein:"Chicken", toddler:true, time:60, source:"Instagram" },
-    { id:"D006", name:"Baked White Fish with Herbs", cuisine:"Mediterranean", protein:"Fish", toddler:true, time:30, source:"EatingWell" },
-    { id:"D007", name:"Vegetable & Halloumi Tray Bake", cuisine:"Mediterranean", protein:"Vegetarian", toddler:true, time:45, source:"simplehomeedit.com" },
-    { id:"D008", name:"Beef Kofta with Rice", cuisine:"Middle Eastern", protein:"Beef", toddler:true, time:40, source:"Instagram" },
-    { id:"D009", name:"Pasta Primavera", cuisine:"Mediterranean", protein:"Vegetarian", toddler:true, time:25, source:"EatingWell" },
-    { id:"D010", name:"Chicken Souvlaki", cuisine:"Mediterranean", protein:"Chicken", toddler:true, time:35, source:"simplehomeedit.com" },
+    { id:"D001", name:'Sticky Hoisin Beef', protein:'Beef mince', toddler:true, time:'20 min', source:'simplehomeedit.com' },
+    { id:"D002", name:'Baked Chicken Rissoles', protein:'Chicken mince', toddler:true, time:'30 min', source:'simplehomeedit.com' },
+    { id:"D003", name:'Creamy Garlic Cucumber Salad', protein:'Side dish', toddler:true, time:'20 min', source:'simplehomeedit.com' },
+    { id:"D004", name:'Chicken Yaki Udon', protein:'Chicken mince', toddler:true, time:'30 min', source:'bitesofberi.com' },
+    { id:"D005", name:'Coconut Lemon Chicken Soup', protein:'Chicken breast', toddler:true, time:'6 hrs (slow cooker)', source:'quirkycooking.com.au' },
+    { id:"D006", name:'Spaghetti Bolognese', protein:'Beef mince', toddler:true, time:'1 hr 30 min', source:'Mangia Mangia' },
+    { id:"D007", name:'Beef Ragu with Pappardelle', protein:'Beef chuck', toddler:true, time:'2 hrs 30 min', source:'Mangia Mangia' },
+    { id:"D008", name:'Italian Polpette (Meatballs) in Tomato Sauce', protein:'Beef mince', toddler:true, time:'40 min', source:'Mangia Mangia' },
+    { id:"D009", name:'Chicken Cacciatore', protein:'Chicken thighs', toddler:true, time:'45 min', source:'Mangia Mangia' },
+    { id:"D010", name:'Creamy Lemon Chicken Noodle Soup', protein:'Chicken breast', toddler:true, time:'30 min', source:'simplehomeedit.com' },
+    { id:"D011", name:'Stuffed Pita (Arayes)', protein:'Beef or lamb mince', toddler:true, time:'25 min', source:'simplehomeedit.com' },
+    { id:"D012", name:'Drunken Noodles', protein:'Chicken breast', toddler:true, time:'18 min', source:'simplehomeedit.com' },
+    { id:"D013", name:'Garlic Butter Crispy Chicken with Creamy Beans', protein:'Chicken breast', toddler:true, time:'25 min', source:'eatinghealthymag' },
+    { id:"D014", name:'Yellow Curry Meatballs', protein:'Ground chicken or turkey', toddler:true, time:'25 min', source:'eatinghealthymag' },
+    { id:"D015", name:'Crispy Gochujang Chicken', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag' },
+    { id:"D016", name:'Sweet Potato Soup with Cauliflower Crumbles', protein:'Vegetarian', toddler:true, time:'30 min', source:'eatinghealthymag' },
+    { id:"D017", name:'Caramelized Beef with Peanut Noodles', protein:'Ground beef', toddler:true, time:'20 min', source:'eatinghealthymag' },
+    { id:"D018", name:'Creamy Chicken and Gnocchi', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag' },
+    { id:"D019", name:'BBQ Salmon with Mango Avocado Salsa', protein:'Salmon (fish)', toddler:false, time:'20 min', source:'eatinghealthymag' },
+    { id:"D020", name:'One-pan Greek Chicken and Risoni (Orzo)', protein:'Chicken thighs', toddler:true, time:'1 hr 10 min', source:'simplehomeedit.com' },
+    { id:"D021", name:'Sesame-soy Dumpling Salad', protein:'Vegetable dumplings', toddler:true, time:'35 min', source:'simplehomeedit.com' },
+    { id:"D022", name:'One-pan Chicken and Broccoli Ramen Noodles', protein:'Chicken thighs', toddler:true, time:'20 min', source:'simplehomeedit.com' },
+    { id:"D023", name:'Gyros Smashed Tacos', protein:'Beef or lamb mince', toddler:true, time:'45 min', source:'simplehomeedit.com' },
+    { id:"D024", name:'Chicken Schnitzel with Creamy Mushroom Sauce', protein:'Chicken breast', toddler:true, time:'50 min', source:'simplehomeedit.com' },
+    { id:"D025", name:'Korean Beef Rice Bowls', protein:'Ground beef', toddler:true, time:'20 min', source:'simplehomeedit.com' },
+    { id:"D026", name:'Turkey Sausage & Bacon Rigatoni', protein:'Turkey sausage & bacon', toddler:true, time:'20 min', source:'eatinghealthymag' },
+    { id:"D027", name:'Sweet and Sour Turkey', protein:'Turkey thigh', toddler:true, time:'35 min', source:'simplehomeedit.com' },
+    { id:"D028", name:'Korean Ground Turkey Sesame Lettuce Cups with Mango Salsa', protein:'Ground turkey', toddler:true, time:'22 min', source:'eatinghealthymag' },
+    { id:"D029", name:'Tuna Poke Bowl', protein:'Tuna (fish)', toddler:false, time:'15 min', source:'eatinghealthymag' },
+    { id:"D030", name:'Healthy Turkey Bacon Caesar Salad', protein:'Turkey bacon & eggs', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"D031", name:'Teriyaki Salmon with Asian Greens', protein:'Salmon (fish)', toddler:false, time:'15 min', source:'Health with Bec eBook' },
+    { id:"D032", name:'Lemon and Garlic Chicken (rotating sides)', protein:'Chicken breast/thighs', toddler:true, time:'40-45 min', source:'Health with Bec eBook' },
+    { id:"D033", name:'Keto Pad Thai', protein:'Tofu', toddler:true, time:'20 min', source:'Health with Bec eBook' },
+    { id:"D034", name:'Turkey Chops with Pumpkin Mash and Broccoli', protein:'Turkey tenderloin', toddler:true, time:'30 min', source:'Health with Bec eBook' },
+    { id:"D035", name:'Zucchini Noodles with Portobello Bolognese', protein:'Vegetarian', toddler:true, time:'20-25 min', source:'Health with Bec eBook' },
+    { id:"D036", name:'Turkey Bacon BLT', protein:'Turkey bacon', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"D037", name:'Mexican Chicken Salad Bowl', protein:'Chicken breast', toddler:true, time:'15 min', source:'Health with Bec eBook' },
+    { id:"D038", name:'Almond and Parmesan Baked Fish with Garlic Greens', protein:'White fish', toddler:false, time:'20-25 min', source:'Health with Bec eBook' },
+    { id:"D039", name:'Turkey Bacon and Tofu Fry Up', protein:'Turkey bacon & tofu', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"D040", name:'Curried Lamb Cutlets with Cauliflower Mash and Green Beans', protein:'Lamb', toddler:true, time:'25 min', source:'Health with Bec eBook' },
+    { id:"D041", name:'10 Minute Cheats Pasta', protein:'Vegetarian', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"D042", name:'One Pan Baked Chicken, Broccoli and Pumpkin', protein:'Chicken thighs', toddler:true, time:'35-40 min', source:'Health with Bec eBook' },
+    { id:"D043", name:'Green and Lean Salmon Bake', protein:'Salmon (fish)', toddler:false, time:'20-25 min', source:'Health with Bec eBook' },
+    { id:"D044", name:'10 Minute Red Curry Stir-fry', protein:'Tofu', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"D045", name:'Roast Chicken and Avocado Salad', protein:'Leftover chicken', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"D046", name:'Red Curry Turkey Steaks with Fresh Herb Salad', protein:'Turkey breast', toddler:true, time:'15 min', source:'Health with Bec eBook' },
+    { id:"D047", name:'Creamy Vegan Green Pesto Pasta', protein:'Vegetarian/vegan', toddler:true, time:'15 min', source:'Health with Bec eBook' },
+    { id:"D048", name:'Keto Zucchini Fritters with Rocket, Tomatoes and Pesto', protein:'Vegetarian', toddler:true, time:'20 min', source:'Health with Bec eBook' },
+    { id:"D049", name:'Grilled Eggplant and Lamb with Mint, Feta & Spinach Salad', protein:'Lamb', toddler:true, time:'15-20 min', source:'Health with Bec eBook' }
   ],
   breakfasts: [
-    { id:"B001", name:"Overnight Oats", toddler:true, time:5, source:"Baby Food Bible" },
-    { id:"B002", name:"Scrambled Eggs & Avocado Toast", toddler:true, time:10, source:"simplehomeedit.com" },
-    { id:"B003", name:"Greek Yoghurt Parfait", toddler:true, time:5, source:"EatingWell" },
-    { id:"B004", name:"Banana Oat Pancakes", toddler:true, time:15, source:"Baby Food Bible" },
-    { id:"B005", name:"Vegetable Omelette", toddler:true, time:15, source:"simplehomeedit.com" },
-    { id:"B006", name:"Chia Pudding", toddler:true, time:5, source:"Blue Zones" },
-    { id:"B007", name:"Avocado & Egg on Wholegrain", toddler:true, time:10, source:"EatingWell" },
-    { id:"B008", name:"Fruit & Nut Smoothie Bowl", toddler:true, time:10, source:"Instagram" },
+    { id:"B001", name:'Smashed Cottage Cheese Scramble with Bagel Crust', toddler:true, time:'20 min', source:'eatinghealthymag' },
+    { id:"B002", name:'Cinnamon Roll Granola Bowl', toddler:true, time:'10 min', source:'eatinghealthymag' },
+    { id:"B003", name:'One Minute Keto Mug Bread with Avocado', toddler:true, time:'2 min', source:'Health with Bec eBook' },
+    { id:"B004", name:'Raspberry and Coconut Chia Pudding', toddler:true, time:'5 min (+chill)', source:'Health with Bec eBook' },
+    { id:"B005", name:'Berry Breakfast Bowl', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B006", name:'Berry Protein Smoothie', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B007", name:'Avocado and Tofu Smash', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B008", name:'Confetti Omelette', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"B009", name:'Nutty Vanilla Protein Milkshake', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B010", name:'One Minute Vanilla Berry Pudding', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B011", name:'Cinnamon Apple Protein Bowl', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B012", name:'Asian Style Omelette', toddler:true, time:'10 min', source:'Health with Bec eBook' },
+    { id:"B013", name:'Avocado Smash on Toast', toddler:true, time:'5 min', source:'Health with Bec eBook' },
+    { id:"B014", name:'Pan Fried Eggs and Asparagus', toddler:true, time:'5 min', source:'Health with Bec eBook' }
   ]
 };
+
+function isExcluded(name) {
+  const n = (name || '').toLowerCase();
+  return EXCLUDED_CUISINES.some(kw => n.includes(kw));
+}
 
 const DAYS = ["Saturday","Sunday","Monday","Tuesday","Wednesday"];
 let currentPlan = { breakfasts: [], dinners: [] };
@@ -639,9 +695,57 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── GENERATE ──────────────────────────────────────────────────────────────────
-async function generateMeals() {
+const DB_COUNT_PER_5 = 3;   // pulled straight from the recipe database
+const NEW_COUNT_PER_5 = 2;  // freshly generated by Claude
+
+// Given N open slots, split proportionally to the 3-db / 2-new ratio (db-biased on rounding).
+function splitDbNew(nOpen) {
+  if (nOpen <= 0) return { dbCount: 0, newCount: 0 };
+  const dbCount = Math.min(nOpen, Math.max(1, Math.round(nOpen * DB_COUNT_PER_5 / 5)));
+  return { dbCount, newCount: nOpen - dbCount };
+}
+
+function pickFromDB(pool, excludeNames, count) {
+  const filtered = pool.filter(r => !isExcluded(r.name) && !excludeNames.has(r.name));
+  const shuffled = filtered.slice().sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+function getOpenIndices(type, regenerateOnly) {
+  // Returns which of the 5 day-slots need (re)generating.
+  if (!regenerateOnly) return [0,1,2,3,4];
+  const open = [];
+  document.querySelectorAll(`.keep-check[data-type="${type}"]`).forEach(cb => {
+    const idx = parseInt(cb.dataset.idx, 10);
+    if (!cb.checked) open.push(idx);
+  });
+  return open;
+}
+
+async function generateMeals(regenerateOnly = false) {
   document.getElementById('gen-loading').classList.add('active');
   document.getElementById('gen-results').style.display = 'none';
+
+  const openBreakfastIdx = getOpenIndices('breakfast', regenerateOnly);
+  const openDinnerIdx = getOpenIndices('dinner', regenerateOnly);
+
+  if (regenerateOnly && openBreakfastIdx.length === 0 && openDinnerIdx.length === 0) {
+    document.getElementById('gen-loading').classList.remove('active');
+    document.getElementById('gen-results').style.display = 'block';
+    showToast('Everything is checked as kept — nothing to regenerate 👍');
+    return;
+  }
+
+  const keptNames = new Set([
+    ...currentPlan.breakfasts.filter((_, i) => !openBreakfastIdx.includes(i)).map(b => b.name),
+    ...currentPlan.dinners.filter((_, i) => !openDinnerIdx.includes(i)).map(d => d.name)
+  ]);
+
+  const { dbCount: bDbCount, newCount: bNewCount } = splitDbNew(openBreakfastIdx.length);
+  const { dbCount: dDbCount, newCount: dNewCount } = splitDbNew(openDinnerIdx.length);
+
+  const dbBreakfasts = pickFromDB(RECIPE_DB.breakfasts, keptNames, bDbCount);
+  const dbDinners = pickFromDB(RECIPE_DB.dinners, keptNames, dDbCount);
 
   const historyContext = `
 Recent meal history (avoid repeating within 3 weeks):
@@ -651,105 +755,107 @@ Recent meal history (avoid repeating within 3 weeks):
 - Lentil & Vegetable Soup (Dinner, 4★, add more spice next time)
 - Baked White Fish with Herbs (Dinner, 4★, toddler not keen on fish yet)
 
-Recipe database available:
-DINNERS: ${RECIPE_DB.dinners.map(d => d.name).join(', ')}
-BREAKFASTS: ${RECIPE_DB.breakfasts.map(b => b.name).join(', ')}
+Meals already locked in for this week (don't repeat these, and don't repeat the database list above):
+${[...keptNames].join(', ') || 'none yet'}
 `;
 
-  const prompt = `You are a family meal planner assistant. Plan meals for the following family:
+  let newBreakfasts = [];
+  let newDinners = [];
+
+  if (bNewCount > 0 || dNewCount > 0) {
+    const prompt = `You are a family meal planner assistant, generating ONLY brand-new recipe ideas (not pulled from an existing database — those are handled separately).
+
+Family:
 - Location: Saudi Arabia (no pork, use locally available ingredients)
 - Diet: Mediterranean, whole foods, minimal processed food
 - Family: 2 adults + 18-month toddler
 - Portions: enough for next-day lunch leftovers (so 3 adult + 1 toddler per meal)
-- Schedule: Saturday to Wednesday (5 days)
-- Sources: Baby Food Bible, Blue Zones, EatingWell.com, simplehomeedit.com
+- Sources to draw on: Baby Food Bible, Blue Zones, EatingWell.com, simplehomeedit.com
 
 ${historyContext}
 
-Please suggest:
-1. 5 BREAKFASTS (one per day, Sat-Wed) - vary between the options, prioritise toddler-friendly, quick prep
-2. 5 DINNERS (one per day, Sat-Wed) - balanced across the week, mix of proteins, avoid fish since toddler didn't enjoy it
+HARD RULE: Never suggest any Tagine dish (Chicken & Chickpea Tagine, Lamb Tagine, or any tagine-style dish) — this family does not like Tagine, full stop.
 
-Rules:
-- Don't repeat meals from the recent history
-- Prioritise high-rated past meals occasionally but also introduce 1-2 new ideas
-- Keep it simple, wholesome, Mediterranean-focused
-- For any NEW recipe not in the database, briefly describe the key ingredients
+Please generate exactly:
+- ${bNewCount} NEW breakfast recipe(s) (not already used this week)
+- ${dNewCount} NEW dinner recipe(s) (balanced proteins, toddler-friendly or easily adaptable)
 
 Respond ONLY in this exact JSON format with no other text:
 {
-  "breakfasts": [
-    {"day": "Saturday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false},
-    {"day": "Sunday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false},
-    {"day": "Monday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": true},
-    {"day": "Tuesday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false},
-    {"day": "Wednesday", "name": "Recipe Name", "source": "Source", "note": "short tip", "isNew": false}
+  "newBreakfasts": [
+    ${bNewCount > 0 ? '{"name": "Recipe Name", "source": "Source", "note": "short tip"}' : ''}
   ],
-  "dinners": [
-    {"day": "Saturday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Chicken", "source": "Source", "note": "short tip", "isNew": false},
-    {"day": "Sunday", "name": "Recipe Name", "cuisine": "Middle Eastern", "protein": "Beef", "source": "Source", "note": "short tip", "isNew": false},
-    {"day": "Monday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Vegetarian", "source": "Source", "note": "short tip", "isNew": true},
-    {"day": "Tuesday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Chicken", "source": "Source", "note": "short tip", "isNew": false},
-    {"day": "Wednesday", "name": "Recipe Name", "cuisine": "Mediterranean", "protein": "Legumes", "source": "Source", "note": "short tip", "isNew": false}
+  "newDinners": [
+    ${dNewCount > 0 ? '{"name": "Recipe Name", "cuisine": "Cuisine", "protein": "Protein", "source": "Source", "note": "short tip"}' : ''}
   ]
 }`;
 
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    document.getElementById('gen-loading').classList.remove('active');
-    showToast('⚙️ Add your API key in Settings first');
-    showTab('settings');
-    return;
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      document.getElementById('gen-loading').classList.remove('active');
+      showToast('⚙️ Add your API key in Settings first');
+      showTab('settings');
+      return;
+    }
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      let text = data.content.map(i => i.text || "").join("");
+      text = text.replace(/```json|```/g, "").trim();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON found in response: ' + text.substring(0, 200));
+      const result = JSON.parse(jsonMatch[0]);
+      newBreakfasts = (result.newBreakfasts || []).filter(r => !isExcluded(r.name)).slice(0, bNewCount);
+      newDinners = (result.newDinners || []).filter(r => !isExcluded(r.name)).slice(0, dNewCount);
+    } catch(e) {
+      console.error('Generate error:', e.message);
+      showToast('⚠️ AI error, filling with database picks instead: ' + e.message.substring(0, 60));
+      // Fall back to extra database picks instead of AI-generated ones
+      const extraB = pickFromDB(RECIPE_DB.breakfasts, new Set([...keptNames, ...dbBreakfasts.map(b=>b.name)]), bNewCount);
+      const extraD = pickFromDB(RECIPE_DB.dinners, new Set([...keptNames, ...dbDinners.map(d=>d.name)]), dNewCount);
+      newBreakfasts = extraB.map(b => ({ name: b.name, source: b.source, note: '' }));
+      newDinners = extraD.map(d => ({ name: d.name, cuisine: '', protein: d.protein, source: d.source, note: '' }));
+    }
   }
 
-  try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    let text = data.content.map(i => i.text || "").join("");
-    text = text.replace(/```json|```/g, "").trim();
-    // Find the JSON object in the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON found in response: ' + text.substring(0, 200));
-    const plan = JSON.parse(jsonMatch[0]);
-    if (!plan.breakfasts || !plan.dinners) throw new Error('Invalid plan structure');
-    currentPlan = plan;
-    renderSuggestions(plan);
-  } catch(e) {
-    console.error('Generate error:', e.message);
-    showToast('⚠️ AI error: ' + e.message.substring(0, 80));
-    // Fallback plan if API unavailable
-    currentPlan = {
-      breakfasts: [
-        {day:"Saturday", name:"Banana Oat Pancakes", source:"Baby Food Bible", note:"Toddler favourite – make extra", isNew:false},
-        {day:"Sunday", name:"Greek Yoghurt Parfait", source:"EatingWell", note:"Quick and easy", isNew:false},
-        {day:"Monday", name:"Overnight Oats", source:"Baby Food Bible", note:"Prep Sunday night", isNew:false},
-        {day:"Tuesday", name:"Scrambled Eggs & Avocado Toast", source:"simplehomeedit.com", note:"", isNew:false},
-        {day:"Wednesday", name:"Chia Pudding with Mango", source:"Blue Zones", note:"Prep the night before", isNew:false},
-      ],
-      dinners: [
-        {day:"Saturday", name:"Baked Lemon Herb Chicken", cuisine:"Mediterranean", protein:"Chicken", source:"Baby Food Bible", note:"Double batch for Sunday lunch", isNew:false},
-        {day:"Sunday", name:"Shakshuka", cuisine:"Middle Eastern", protein:"Eggs", source:"simplehomeedit.com", note:"Add extra eggs", isNew:false},
-        {day:"Monday", name:"Chicken & Chickpea Tagine", cuisine:"Middle Eastern", protein:"Chicken", source:"Instagram", note:"Serve with couscous", isNew:false},
-        {day:"Tuesday", name:"Vegetable & Halloumi Tray Bake", cuisine:"Mediterranean", protein:"Vegetarian", source:"simplehomeedit.com", note:"", isNew:false},
-        {day:"Wednesday", name:"Lentil & Vegetable Soup", cuisine:"Mediterranean", protein:"Legumes", source:"Blue Zones", note:"More cumin than last time", isNew:false},
-      ]
-    };
-    renderSuggestions(currentPlan);
-  }
+  // Merge: kept slots stay as-is, open slots get filled with db picks first, then AI-new picks
+  const bFillQueue = [
+    ...dbBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.time ? `${b.time} prep` : '', isNew: false })),
+    ...newBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.note || '', isNew: true }))
+  ];
+  const dFillQueue = [
+    ...dbDinners.map(d => ({ name: d.name, cuisine: '', protein: d.protein, source: d.source, note: d.time ? `${d.time} prep` : '', isNew: false })),
+    ...newDinners.map(d => ({ name: d.name, cuisine: d.cuisine || '', protein: d.protein || '', source: d.source, note: d.note || '', isNew: true }))
+  ];
+
+  const newBreakfastPlan = [...currentPlan.breakfasts];
+  const newDinnerPlan = [...currentPlan.dinners];
+  openBreakfastIdx.forEach((idx, k) => {
+    const fill = bFillQueue[k] || { name: 'TBD', source: '', note: '', isNew: false };
+    newBreakfastPlan[idx] = { day: DAYS[idx], ...fill };
+  });
+  openDinnerIdx.forEach((idx, k) => {
+    const fill = dFillQueue[k] || { name: 'TBD', source: '', note: '', isNew: false };
+    newDinnerPlan[idx] = { day: DAYS[idx], ...fill };
+  });
+
+  currentPlan = { breakfasts: newBreakfastPlan, dinners: newDinnerPlan };
+  renderSuggestions(currentPlan);
 
   document.getElementById('gen-loading').classList.remove('active');
   document.getElementById('gen-results').style.display = 'block';
@@ -761,9 +867,10 @@ function renderSuggestions(plan) {
 
   bDiv.innerHTML = plan.breakfasts.map((b, i) => `
     <div class="meal-row">
-      <div class="meal-day">${b.day.slice(0,3)}</div>
+      <input type="checkbox" class="keep-check" data-type="breakfast" data-idx="${i}" title="Keep this meal" style="margin-right:8px;width:18px;height:18px;flex-shrink:0;">
+      <div class="meal-day">${(b.day||DAYS[i]).slice(0,3)}</div>
       <div class="meal-info">
-        <div class="meal-name">${b.name} ${b.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : ''}</div>
+        <div class="meal-name">${b.name} ${b.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : '<span class="badge" style="font-size:0.6rem;padding:2px 6px;">DB</span>'}</div>
         <div class="meal-meta">${b.source} ${b.note ? '· ' + b.note : ''}</div>
       </div>
       <div class="meal-actions">
@@ -774,10 +881,11 @@ function renderSuggestions(plan) {
 
   dDiv.innerHTML = plan.dinners.map((d, i) => `
     <div class="meal-row">
-      <div class="meal-day">${d.day.slice(0,3)}</div>
+      <input type="checkbox" class="keep-check" data-type="dinner" data-idx="${i}" title="Keep this meal" style="margin-right:8px;width:18px;height:18px;flex-shrink:0;">
+      <div class="meal-day">${(d.day||DAYS[i]).slice(0,3)}</div>
       <div class="meal-info">
-        <div class="meal-name">${d.name} ${d.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : ''}</div>
-        <div class="meal-meta">${d.cuisine} · ${d.protein} · ${d.source} ${d.note ? '· ' + d.note : ''}</div>
+        <div class="meal-name">${d.name} ${d.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : '<span class="badge" style="font-size:0.6rem;padding:2px 6px;">DB</span>'}</div>
+        <div class="meal-meta">${d.cuisine ? d.cuisine + ' · ' : ''}${d.protein || ''} · ${d.source} ${d.note ? '· ' + d.note : ''}</div>
       </div>
       <div class="meal-actions">
         <button class="btn-icon reject" onclick="swapMeal('dinner',${i})" title="Swap">↔</button>
