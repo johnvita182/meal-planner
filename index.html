@@ -363,6 +363,25 @@
   <div id="tab-recipes" class="section">
     <div class="card">
       <div class="card-header">
+        <h3>📚 My Recipes</h3>
+        <span class="badge" id="recipe-count-badge"></span>
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <input type="text" id="recipe-search" placeholder="Search by name, protein or ingredient…" oninput="renderRecipeLibrary()">
+      </div>
+      <select id="recipe-filter" onchange="renderRecipeLibrary()" style="width:100%;padding:8px 10px;border:1.5px solid var(--green-bg);border-radius:8px;font-size:0.82rem;margin-bottom:10px;">
+        <option value="all">All meal types</option>
+        <option value="dinner">Dinners</option>
+        <option value="breakfast">Breakfasts</option>
+      </select>
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">
+        Ingredient lists are summarised (not full step-by-step instructions, to respect the original creators' copyright). Tap "View Original" for the full method and exact quantities where a source link is available.
+      </p>
+      <div id="recipe-library"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
         <h3>📸 Add Instagram Recipe</h3>
       </div>
       <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Screenshot a recipe from Instagram, then describe it below. Claude will extract and save it to your database.</p>
@@ -540,7 +559,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── STATE ────────────────────────────────────────────────────────────────────
+// ── STATE ─────────────────────────────────────────────────────────────────────
 const FAMILY = {
   location: "Saudi Arabia",
   diet: "Mediterranean, no pork, whole foods, toddler 18 months",
@@ -557,71 +576,71 @@ const EXCLUDED_CUISINES = ["tagine"]; // lowercase keywords to always filter out
 
 const RECIPE_DB = {
   dinners: [
-    { id:"D001", name:'Sticky Hoisin Beef', protein:'Beef mince', toddler:true, time:'20 min', source:'simplehomeedit.com' },
-    { id:"D002", name:'Baked Chicken Rissoles', protein:'Chicken mince', toddler:true, time:'30 min', source:'simplehomeedit.com' },
-    { id:"D003", name:'Creamy Garlic Cucumber Salad', protein:'Side dish', toddler:true, time:'20 min', source:'simplehomeedit.com' },
-    { id:"D004", name:'Chicken Yaki Udon', protein:'Chicken mince', toddler:true, time:'30 min', source:'bitesofberi.com' },
-    { id:"D005", name:'Coconut Lemon Chicken Soup', protein:'Chicken breast', toddler:true, time:'6 hrs (slow cooker)', source:'quirkycooking.com.au' },
-    { id:"D006", name:'Spaghetti Bolognese', protein:'Beef mince', toddler:true, time:'1 hr 30 min', source:'Mangia Mangia' },
-    { id:"D007", name:'Beef Ragu with Pappardelle', protein:'Beef chuck', toddler:true, time:'2 hrs 30 min', source:'Mangia Mangia' },
-    { id:"D008", name:'Italian Polpette (Meatballs) in Tomato Sauce', protein:'Beef mince', toddler:true, time:'40 min', source:'Mangia Mangia' },
-    { id:"D009", name:'Chicken Cacciatore', protein:'Chicken thighs', toddler:true, time:'45 min', source:'Mangia Mangia' },
-    { id:"D010", name:'Creamy Lemon Chicken Noodle Soup', protein:'Chicken breast', toddler:true, time:'30 min', source:'simplehomeedit.com' },
-    { id:"D011", name:'Stuffed Pita (Arayes)', protein:'Beef or lamb mince', toddler:true, time:'25 min', source:'simplehomeedit.com' },
-    { id:"D012", name:'Drunken Noodles', protein:'Chicken breast', toddler:true, time:'18 min', source:'simplehomeedit.com' },
-    { id:"D013", name:'Garlic Butter Crispy Chicken with Creamy Beans', protein:'Chicken breast', toddler:true, time:'25 min', source:'eatinghealthymag' },
-    { id:"D014", name:'Yellow Curry Meatballs', protein:'Ground chicken or turkey', toddler:true, time:'25 min', source:'eatinghealthymag' },
-    { id:"D015", name:'Crispy Gochujang Chicken', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag' },
-    { id:"D016", name:'Sweet Potato Soup with Cauliflower Crumbles', protein:'Vegetarian', toddler:true, time:'30 min', source:'eatinghealthymag' },
-    { id:"D017", name:'Caramelized Beef with Peanut Noodles', protein:'Ground beef', toddler:true, time:'20 min', source:'eatinghealthymag' },
-    { id:"D018", name:'Creamy Chicken and Gnocchi', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag' },
-    { id:"D019", name:'BBQ Salmon with Mango Avocado Salsa', protein:'Salmon (fish)', toddler:false, time:'20 min', source:'eatinghealthymag' },
-    { id:"D020", name:'One-pan Greek Chicken and Risoni (Orzo)', protein:'Chicken thighs', toddler:true, time:'1 hr 10 min', source:'simplehomeedit.com' },
-    { id:"D021", name:'Sesame-soy Dumpling Salad', protein:'Vegetable dumplings', toddler:true, time:'35 min', source:'simplehomeedit.com' },
-    { id:"D022", name:'One-pan Chicken and Broccoli Ramen Noodles', protein:'Chicken thighs', toddler:true, time:'20 min', source:'simplehomeedit.com' },
-    { id:"D023", name:'Gyros Smashed Tacos', protein:'Beef or lamb mince', toddler:true, time:'45 min', source:'simplehomeedit.com' },
-    { id:"D024", name:'Chicken Schnitzel with Creamy Mushroom Sauce', protein:'Chicken breast', toddler:true, time:'50 min', source:'simplehomeedit.com' },
-    { id:"D025", name:'Korean Beef Rice Bowls', protein:'Ground beef', toddler:true, time:'20 min', source:'simplehomeedit.com' },
-    { id:"D026", name:'Turkey Sausage & Bacon Rigatoni', protein:'Turkey sausage & bacon', toddler:true, time:'20 min', source:'eatinghealthymag' },
-    { id:"D027", name:'Sweet and Sour Turkey', protein:'Turkey thigh', toddler:true, time:'35 min', source:'simplehomeedit.com' },
-    { id:"D028", name:'Korean Ground Turkey Sesame Lettuce Cups with Mango Salsa', protein:'Ground turkey', toddler:true, time:'22 min', source:'eatinghealthymag' },
-    { id:"D029", name:'Tuna Poke Bowl', protein:'Tuna (fish)', toddler:false, time:'15 min', source:'eatinghealthymag' },
-    { id:"D030", name:'Healthy Turkey Bacon Caesar Salad', protein:'Turkey bacon & eggs', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"D031", name:'Teriyaki Salmon with Asian Greens', protein:'Salmon (fish)', toddler:false, time:'15 min', source:'Health with Bec eBook' },
-    { id:"D032", name:'Lemon and Garlic Chicken (rotating sides)', protein:'Chicken breast/thighs', toddler:true, time:'40-45 min', source:'Health with Bec eBook' },
-    { id:"D033", name:'Keto Pad Thai', protein:'Tofu', toddler:true, time:'20 min', source:'Health with Bec eBook' },
-    { id:"D034", name:'Turkey Chops with Pumpkin Mash and Broccoli', protein:'Turkey tenderloin', toddler:true, time:'30 min', source:'Health with Bec eBook' },
-    { id:"D035", name:'Zucchini Noodles with Portobello Bolognese', protein:'Vegetarian', toddler:true, time:'20-25 min', source:'Health with Bec eBook' },
-    { id:"D036", name:'Turkey Bacon BLT', protein:'Turkey bacon', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"D037", name:'Mexican Chicken Salad Bowl', protein:'Chicken breast', toddler:true, time:'15 min', source:'Health with Bec eBook' },
-    { id:"D038", name:'Almond and Parmesan Baked Fish with Garlic Greens', protein:'White fish', toddler:false, time:'20-25 min', source:'Health with Bec eBook' },
-    { id:"D039", name:'Turkey Bacon and Tofu Fry Up', protein:'Turkey bacon & tofu', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"D040", name:'Curried Lamb Cutlets with Cauliflower Mash and Green Beans', protein:'Lamb', toddler:true, time:'25 min', source:'Health with Bec eBook' },
-    { id:"D041", name:'10 Minute Cheats Pasta', protein:'Vegetarian', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"D042", name:'One Pan Baked Chicken, Broccoli and Pumpkin', protein:'Chicken thighs', toddler:true, time:'35-40 min', source:'Health with Bec eBook' },
-    { id:"D043", name:'Green and Lean Salmon Bake', protein:'Salmon (fish)', toddler:false, time:'20-25 min', source:'Health with Bec eBook' },
-    { id:"D044", name:'10 Minute Red Curry Stir-fry', protein:'Tofu', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"D045", name:'Roast Chicken and Avocado Salad', protein:'Leftover chicken', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"D046", name:'Red Curry Turkey Steaks with Fresh Herb Salad', protein:'Turkey breast', toddler:true, time:'15 min', source:'Health with Bec eBook' },
-    { id:"D047", name:'Creamy Vegan Green Pesto Pasta', protein:'Vegetarian/vegan', toddler:true, time:'15 min', source:'Health with Bec eBook' },
-    { id:"D048", name:'Keto Zucchini Fritters with Rocket, Tomatoes and Pesto', protein:'Vegetarian', toddler:true, time:'20 min', source:'Health with Bec eBook' },
-    { id:"D049", name:'Grilled Eggplant and Lamb with Mint, Feta & Spinach Salad', protein:'Lamb', toddler:true, time:'15-20 min', source:'Health with Bec eBook' }
+    { id:"D001", name:'Sticky Hoisin Beef', protein:'Beef mince', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:'Beef mince, wide rice noodles, cabbage, carrot, spring onion, garlic, hoisin, tamari, dark soy, rice wine vinegar, brown sugar, sesame oil, peanuts, lime', link:'https://simplehomeedit.com/recipe/sticky-hoisin-beef/' },
+    { id:"D002", name:'Baked Chicken Rissoles', protein:'Chicken mince', toddler:true, time:'30 min', source:'simplehomeedit.com', ingredients:'Chicken mince, onion, garlic, parsley, panko, egg, chicken stock powder, paprika, parmesan', link:'https://simplehomeedit.com/recipe/baked-chicken-rissoles/' },
+    { id:"D003", name:'Creamy Garlic Cucumber Salad', protein:'Side dish', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:'Lebanese cucumbers, Greek yoghurt, garlic, apple cider vinegar, olive oil', link:'https://simplehomeedit.com/recipe/creamy-garlic-cucumber-salad/' },
+    { id:"D004", name:'Chicken Yaki Udon', protein:'Chicken mince', toddler:true, time:'30 min', source:'bitesofberi.com', ingredients:'Udon noodles, chicken mince, garlic, onion, cabbage, carrot, mushrooms, red capsicum, green onion, dark soy, oyster sauce, honey, mirin, chilli flakes', link:'https://www.bitesofberi.com/chicken-yaki-udon/' },
+    { id:"D005", name:'Coconut Lemon Chicken Soup', protein:'Chicken breast', toddler:true, time:'6 hrs (slow cooker)', source:'quirkycooking.com.au', ingredients:'Fresh ginger, fresh turmeric, garlic, coriander, spring onion, red chilli, chicken stock, coconut milk, chicken breast (450g), lemon juice, coconut sugar, fish sauce', link:'https://quirkycooking.com.au/2009/07/coconut-lemon-chicken-soup/' },
+    { id:"D006", name:'Spaghetti Bolognese', protein:'Beef mince', toddler:true, time:'1 hr 30 min', source:'Mangia Mangia', ingredients:'Beef mince, carrot, celery, onion, garlic, tomato passata, olive oil, spaghetti, splash of milk', link:'' },
+    { id:"D007", name:'Beef Ragu with Pappardelle', protein:'Beef chuck', toddler:true, time:'2 hrs 30 min', source:'Mangia Mangia', ingredients:'Beef chuck, carrot, celery, onion, garlic, crushed tomatoes, bay leaf, olive oil, pappardelle', link:'' },
+    { id:"D008", name:'Italian Polpette (Meatballs) in Tomato Sauce', protein:'Beef mince', toddler:true, time:'40 min', source:'Mangia Mangia', ingredients:'Beef mince, breadcrumbs, egg, parmesan, garlic, parsley, crushed tomatoes, olive oil', link:'' },
+    { id:"D009", name:'Chicken Cacciatore', protein:'Chicken thighs', toddler:true, time:'45 min', source:'Mangia Mangia', ingredients:'Chicken thighs, onion, garlic, bell pepper, crushed tomatoes, rosemary, olive oil', link:'' },
+    { id:"D010", name:'Creamy Lemon Chicken Noodle Soup', protein:'Chicken breast', toddler:true, time:'30 min', source:'simplehomeedit.com', ingredients:'Chicken breast, onion, garlic, carrot, celery, butter, flour, chicken stock, dried thyme/oregano, vermicelli or angel hair pasta, zucchini, thickened/heavy cream, parmesan, lemon juice, parsley', link:'' },
+    { id:"D011", name:'Stuffed Pita (Arayes)', protein:'Beef or lamb mince', toddler:true, time:'25 min', source:'simplehomeedit.com', ingredients:'Turkish pita bread, beef or lamb mince, garlic, onion, cumin, paprika, ground coriander, fresh coriander, Greek yoghurt, tahini, lemon juice, red onion, white vinegar', link:'' },
+    { id:"D012", name:'Drunken Noodles', protein:'Chicken breast', toddler:true, time:'18 min', source:'simplehomeedit.com', ingredients:'Wide rice noodles, chicken breast, oyster sauce, light and dark soy sauce, fish sauce, brown sugar, onion, garlic, carrot, bok choy, spring onion, Thai basil, chilli oil vinegar, crushed peanuts', link:'' },
+    { id:"D013", name:'Garlic Butter Crispy Chicken with Creamy Beans', protein:'Chicken breast', toddler:true, time:'25 min', source:'eatinghealthymag', ingredients:'Chicken breast, olive oil, garlic, cannellini beans, light cooking cream, parmesan, cherry tomatoes, baby spinach, red pepper flakes, basil, parsley', link:'' },
+    { id:"D014", name:'Yellow Curry Meatballs', protein:'Ground chicken or turkey', toddler:true, time:'25 min', source:'eatinghealthymag', ingredients:'Ground chicken/turkey, garlic, ginger, yellow curry paste, light coconut milk, chicken stock, fish sauce, egg white, breadcrumbs, coriander, lime', link:'' },
+    { id:"D015", name:'Crispy Gochujang Chicken', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag', ingredients:'Chicken breast, cornstarch, gochujang paste, low-sodium soy sauce, honey, rice vinegar, garlic, sesame oil, rice, spring onion, sesame seeds', link:'' },
+    { id:"D016", name:'Sweet Potato Soup with Cauliflower Crumbles', protein:'Vegetarian', toddler:true, time:'30 min', source:'eatinghealthymag', ingredients:'Sweet potato, cauliflower, onion, vegetable/chicken stock, cumin, paprika, olive oil, fresh coriander', link:'' },
+    { id:"D017", name:'Caramelized Beef with Peanut Noodles', protein:'Ground beef', toddler:true, time:'20 min', source:'eatinghealthymag', ingredients:'Ground beef, egg noodles, peanut butter, low-sodium soy sauce, honey, rice vinegar, garlic, sesame oil, peanuts, spring onions, chilli crisp', link:'' },
+    { id:"D018", name:'Creamy Chicken and Gnocchi', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag', ingredients:'Chicken breast, gnocchi, baby spinach, Greek yoghurt or light cream, garlic, parmesan, Italian herbs', link:'' },
+    { id:"D019", name:'BBQ Salmon with Mango Avocado Salsa', protein:'Salmon (fish)', toddler:false, time:'20 min', source:'eatinghealthymag', ingredients:'Salmon fillet, BBQ seasoning or smoked paprika, honey, rice, mango, avocado, red onion, coriander, lime', link:'' },
+    { id:"D020", name:'One-pan Greek Chicken and Risoni (Orzo)', protein:'Chicken thighs (bone-in)', toddler:true, time:'1 hr 10 min', source:'simplehomeedit.com', ingredients:'Bone-in chicken thigh cutlets, olive oil, lemon juice, garlic, oregano, paprika, brown sugar, risoni (orzo), chicken stock, baby spinach, parmesan, feta', link:'https://simplehomeedit.com/recipe/one-pan-greek-chicken-and-risoni/' },
+    { id:"D021", name:'Sesame-soy Dumpling Salad', protein:'Vegetable dumplings', toddler:true, time:'35 min', source:'simplehomeedit.com', ingredients:'Tamari or soy sauce, rice wine vinegar, sesame oil, garlic, ginger, brown sugar, sesame seeds, crispy chilli oil, napa cabbage, cucumber, spring onion, red onion, vegetable dumplings, coriander, roasted peanuts', link:'' },
+    { id:"D022", name:'One-pan Chicken and Broccoli Ramen Noodles', protein:'Chicken thighs (can sub breast)', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:'Honey, dark soy sauce, oyster sauce, mirin, tomato ketchup, sesame oil, diced chicken thighs or breast, spring onion, garlic, ginger, broccoli, ramen noodles', link:'' },
+    { id:"D023", name:'Gyros Smashed Tacos', protein:'Beef or lamb mince', toddler:true, time:'45 min', source:'simplehomeedit.com', ingredients:'Beef or lamb mince, garlic powder, onion powder, dried oregano, cumin, paprika, mini flour tortillas, tzatziki, tomatoes, sumac onions, fries/chips', link:'' },
+    { id:"D024", name:'Chicken Schnitzel with Creamy Mushroom Sauce', protein:'Chicken breast', toddler:true, time:'50 min', source:'simplehomeedit.com', ingredients:'Chicken breast, flour, egg, panko breadcrumbs, mushrooms, butter, garlic, thickened/heavy cream, dijon mustard, chicken stock powder, thyme, parmesan', link:'' },
+    { id:"D025", name:'Korean Beef Rice Bowls', protein:'Ground beef', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:'Garlic, ginger, soy sauce, brown sugar, sesame oil, gochujang, rice vinegar, sesame seeds, ground beef, spring onion, mayonnaise, jasmine rice, kimchi, carrot, cucumber', link:'https://simplehomeedit.com/recipe/korean-beef-rice-bowls/' },
+    { id:"D026", name:'Turkey Sausage & Bacon Rigatoni', protein:'Turkey sausage & turkey bacon', toddler:true, time:'20 min', source:'eatinghealthymag', ingredients:'Rigatoni, turkey sausage (casing removed), turkey bacon, passata or chopped tomatoes, Greek yoghurt or light cream, garlic, onion, chilli flakes, fresh basil', link:'' },
+    { id:"D027", name:'Sweet and Sour Turkey', protein:'Turkey thigh (veal also works)', toddler:true, time:'35 min', source:'simplehomeedit.com', ingredients:'Turkey thigh (bite-sized pieces, or veal), soy sauce, garlic, ginger, bicarbonate of soda, egg, cornflour, oil for frying, sweet and sour sauce (cornflour, water, soy sauce, brown sugar, pineapple juice, vinegar, ketchup), brown and red onion, red and green capsicum, pineapple chunks', link:'' },
+    { id:"D028", name:'Korean Ground Turkey Sesame Lettuce Cups with Mango Salsa', protein:'Ground turkey', toddler:true, time:'22 min', source:'eatinghealthymag', ingredients:'Ground turkey, butter lettuce, mango, red bell pepper, gochujang, soy sauce, garlic, sesame seeds, cilantro, Greek yoghurt, sriracha', link:'' },
+    { id:"D029", name:'Tuna Poke Bowl', protein:'Tuna (canned, fish)', toddler:false, time:'15 min', source:'eatinghealthymag', ingredients:'Canned tuna in water, brown rice, cucumber, edamame, tomato, red cabbage, avocado, microgreens, sesame seeds, low-sodium soy sauce, sriracha, rice vinegar', link:'' },
+    { id:"D030", name:'Healthy Turkey Bacon Caesar Salad', protein:'Turkey bacon & eggs', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Hard boiled eggs, turkey bacon, iceberg lettuce, parmesan, Greek yoghurt, nutritional yeast, olive oil, lemon juice, onion powder, garlic powder, salt, pepper', link:'' },
+    { id:"D031", name:'Teriyaki Salmon with Asian Greens', protein:'Salmon (fish)', toddler:false, time:'15 min', source:'Health with Bec eBook', ingredients:'Salmon fillet, fresh ginger, garlic, tamari, mirin, stevia, olive oil, bok choy, broccoli', link:'' },
+    { id:"D032", name:'Lemon and Garlic Chicken (rotating sides)', protein:'Chicken breast/thighs', toddler:true, time:'40-45 min', source:'Health with Bec eBook', ingredients:'Chicken breast, tenders or thighs, olive oil, garlic, oregano, thyme, salt, pepper, lemon zest; rotates with pumpkin & eggplant, or BBQ herbed vegetables, or creamy broccoli mash & asparagus', link:'' },
+    { id:"D033", name:'Keto Pad Thai', protein:'Tofu', toddler:true, time:'20 min', source:'Health with Bec eBook', ingredients:'Firm tofu, broccoli, red capsicum, ginger, olive oil, spring onion, almonds, chilli flakes, salt, pepper, almond butter, rice wine vinegar, fish sauce, tamari, lime juice, stevia, Slendier slim pasta or regular rice noodles', link:'' },
+    { id:"D034", name:'Turkey Chops with Pumpkin Mash and Broccoli', protein:'Turkey tenderloin', toddler:true, time:'30 min', source:'Health with Bec eBook', ingredients:'Turkey tenderloin, spring onion, tamari, ginger, olive oil, stevia, garlic, pepper, butternut pumpkin, coconut oil, coconut cream, stock, broccoli', link:'' },
+    { id:"D035", name:'Zucchini Noodles with Portobello Bolognese', protein:'Vegetarian (mushroom)', toddler:true, time:'20-25 min', source:'Health with Bec eBook', ingredients:'Olive oil, portobello mushrooms, carrot, celery, brown onion, garlic, salt, pepper, tomato paste, crushed tomatoes, oregano, basil, zucchini (spiralized), parmesan, hemp seeds, chilli flakes', link:'' },
+    { id:"D036", name:'Turkey Bacon BLT', protein:'Turkey bacon', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Seeded bread, tomato, avocado, turkey bacon, iceberg lettuce', link:'' },
+    { id:"D037", name:'Mexican Chicken Salad Bowl', protein:'Chicken breast', toddler:true, time:'15 min', source:'Health with Bec eBook', ingredients:'Chicken breast, lime juice, chilli powder, onion powder, garlic, cumin, dried coriander, ground ginger, olive oil, lettuce, cherry tomatoes, red onion, cucumber, avocado, jalapenos, Greek yoghurt', link:'' },
+    { id:"D038", name:'Almond and Parmesan Baked Fish with Garlic Greens', protein:'White fish', toddler:false, time:'20-25 min', source:'Health with Bec eBook', ingredients:'White fish fillets, almond flour, parmesan, egg white, zucchini, broccolini, green beans, garlic, olive oil, basil, salt, pepper, dill, chilli flakes', link:'' },
+    { id:"D039", name:'Turkey Bacon and Tofu Fry Up', protein:'Turkey bacon & tofu', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Firm tofu, turkey bacon, olive oil, garlic, red capsicum, zucchini, cauliflower, spinach, Slendier or regular noodles, red pesto', link:'' },
+    { id:"D040", name:'Curried Lamb Cutlets with Cauliflower Mash and Green Beans', protein:'Lamb', toddler:true, time:'25 min', source:'Health with Bec eBook', ingredients:'Lamb cutlets, red or yellow curry paste, tomato paste, lime juice, dried mint, salt, pepper, cauliflower, butter or olive oil, garlic, parmesan, almond milk, green beans', link:'' },
+    { id:"D041", name:'10 Minute Cheats Pasta', protein:'Vegetarian', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Slendier pasta (or regular pasta), jarred tomato pasta sauce, broccolini, garlic, olive oil, salt, pepper, chilli flakes, nutritional yeast, basil', link:'' },
+    { id:"D042", name:'One Pan Baked Chicken, Broccoli and Pumpkin', protein:'Chicken thighs', toddler:true, time:'35-40 min', source:'Health with Bec eBook', ingredients:'Skinless chicken thighs, broccoli, pumpkin, red onion, garlic, olive oil, dried Italian herbs, salt, pepper', link:'' },
+    { id:"D043", name:'Green and Lean Salmon Bake', protein:'Salmon (fish)', toddler:false, time:'20-25 min', source:'Health with Bec eBook', ingredients:'Salmon fillet, garlic, lemon juice, lemon zest, olive oil, salt, brussels sprouts, asparagus, broccoli, parsley', link:'' },
+    { id:"D044", name:'10 Minute Red Curry Stir-fry', protein:'Tofu', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Firm tofu, coconut oil, garlic, bok choy, broccoli, light coconut cream, red curry paste, coriander, chilli flakes, alfalfa or broccoli sprouts, coconut aminos', link:'' },
+    { id:"D045", name:'Roast Chicken and Avocado Salad', protein:'Leftover roast chicken', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Leftover roast chicken, avocado, lettuce, cucumber, cherry tomatoes, red onion, salt, pepper', link:'' },
+    { id:"D046", name:'Red Curry Turkey Steaks with Fresh Herb Salad', protein:'Turkey breast', toddler:true, time:'15 min', source:'Health with Bec eBook', ingredients:'Turkey breast steaks, fish sauce, red curry paste, coconut oil, olive oil, stevia, coriander, red capsicum, snow peas, rocket', link:'' },
+    { id:"D047", name:'Creamy Vegan Green Pesto Pasta', protein:'Vegetarian/vegan', toddler:true, time:'15 min', source:'Health with Bec eBook', ingredients:'Avocado, kale or spinach, garlic, lemon juice, fresh basil, pine nuts, olive oil, water, edamame pasta (or regular pasta)', link:'' },
+    { id:"D048", name:'Keto Zucchini Fritters with Rocket, Tomatoes and Pesto', protein:'Vegetarian', toddler:true, time:'20 min', source:'Health with Bec eBook', ingredients:'Zucchini, parmesan or nutritional yeast, almond meal, eggs, salt, pepper, olive oil or butter, rocket, cherry tomatoes, low-carb pesto, coconut yoghurt', link:'' },
+    { id:"D049", name:'Grilled Eggplant and Lamb with Mint, Feta & Spinach Salad', protein:'Lamb', toddler:true, time:'15-20 min', source:'Health with Bec eBook', ingredients:'Olive oil, red or white wine vinegar, fresh oregano, salt, pepper, lamb fillet, eggplant, fresh mint, feta cheese, spinach, lemon juice', link:'' }
   ],
   breakfasts: [
-    { id:"B001", name:'Smashed Cottage Cheese Scramble with Bagel Crust', toddler:true, time:'20 min', source:'eatinghealthymag' },
-    { id:"B002", name:'Cinnamon Roll Granola Bowl', toddler:true, time:'10 min', source:'eatinghealthymag' },
-    { id:"B003", name:'One Minute Keto Mug Bread with Avocado', toddler:true, time:'2 min', source:'Health with Bec eBook' },
-    { id:"B004", name:'Raspberry and Coconut Chia Pudding', toddler:true, time:'5 min (+chill)', source:'Health with Bec eBook' },
-    { id:"B005", name:'Berry Breakfast Bowl', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B006", name:'Berry Protein Smoothie', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B007", name:'Avocado and Tofu Smash', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B008", name:'Confetti Omelette', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"B009", name:'Nutty Vanilla Protein Milkshake', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B010", name:'One Minute Vanilla Berry Pudding', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B011", name:'Cinnamon Apple Protein Bowl', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B012", name:'Asian Style Omelette', toddler:true, time:'10 min', source:'Health with Bec eBook' },
-    { id:"B013", name:'Avocado Smash on Toast', toddler:true, time:'5 min', source:'Health with Bec eBook' },
-    { id:"B014", name:'Pan Fried Eggs and Asparagus', toddler:true, time:'5 min', source:'Health with Bec eBook' }
+    { id:"B001", name:'Smashed Cottage Cheese Scramble with Bagel Crust', toddler:true, time:'20 min', source:'eatinghealthymag', ingredients:'Everything bagel, cottage cheese, eggs, shredded cheese, Greek yoghurt, fresh parsley, salt, pepper, everything bagel seasoning' },
+    { id:"B002", name:'Cinnamon Roll Granola Bowl', toddler:true, time:'10 min', source:'eatinghealthymag', ingredients:'Plain non-fat Greek yoghurt, cinnamon-flavoured granola (any brand), blueberries, almond butter, honey, unsweetened coconut flakes' },
+    { id:"B003", name:'One Minute Keto Mug Bread with Avocado', toddler:true, time:'2 min', source:'Health with Bec eBook', ingredients:'Almond flour, egg, baking powder, salt, coconut oil or butter, avocado' },
+    { id:"B004", name:'Raspberry and Coconut Chia Pudding', toddler:true, time:'5 min (+chill)', source:'Health with Bec eBook', ingredients:'Chia seeds, vanilla extract, stevia, coconut milk, cinnamon, salt, Greek or coconut yoghurt, raspberries, pumpkin seeds' },
+    { id:"B005", name:'Berry Breakfast Bowl', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Coconut or Greek yoghurt, mixed berries, almonds, chia seeds, vanilla protein powder, stevia, cinnamon' },
+    { id:"B006", name:'Berry Protein Smoothie', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Frozen berries, almond milk, water, coconut yoghurt, vanilla protein powder, chia seeds, stevia' },
+    { id:"B007", name:'Avocado and Tofu Smash', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Seeded bread, avocado, firm tofu, pumpkin seeds, lemon juice, nutritional yeast, paprika, garlic powder, onion powder, salt, pepper' },
+    { id:"B008", name:'Confetti Omelette', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Butter, eggs, egg white, red and green capsicum, brown onion, salt, cheddar cheese' },
+    { id:"B009", name:'Nutty Vanilla Protein Milkshake', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Almond milk, almond butter, ice, cinnamon, salt, vanilla protein powder, chia seeds, stevia' },
+    { id:"B010", name:'One Minute Vanilla Berry Pudding', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Vanilla protein powder, almond flour, egg white, baking soda, salt, stevia, cinnamon, mixed berries, coconut or Greek yoghurt' },
+    { id:"B011", name:'Cinnamon Apple Protein Bowl', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Apple, coconut or Greek yoghurt, cinnamon, stevia, vanilla protein powder, chia seeds' },
+    { id:"B012", name:'Asian Style Omelette', toddler:true, time:'10 min', source:'Health with Bec eBook', ingredients:'Coconut oil, string beans, mushrooms, fresh ginger, garlic, eggs, fish sauce, tamari, sesame oil, curry powder, cucumber, coriander, spring onion, chilli flakes' },
+    { id:"B013", name:'Avocado Smash on Toast', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Seeded bread, avocado, lemon juice, feta or vegan cheese, cherry tomatoes, basil, salt, pepper, chilli flakes' },
+    { id:"B014", name:'Pan Fried Eggs and Asparagus', toddler:true, time:'5 min', source:'Health with Bec eBook', ingredients:'Eggs, asparagus, olive oil, salt, pepper, chilli flakes' }
   ]
 };
 
@@ -634,7 +653,7 @@ const DAYS = ["Saturday","Sunday","Monday","Tuesday","Wednesday"];
 let currentPlan = { breakfasts: [], dinners: [] };
 let swapTarget = null;
 
-// ── TABS ─────────────────────────────────────────────────────────────────────
+// ── TABS ──────────────────────────────────────────────────────────────────────
 function showTab(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -642,6 +661,7 @@ function showTab(id) {
   const idx = ['plan','generate','shopping','recipes','history','settings'].indexOf(id);
   document.querySelectorAll('nav button')[idx].classList.add('active');
   if (id === 'settings') refreshApiStatus();
+  if (id === 'recipes') renderRecipeLibrary();
 }
 
 // ── API KEY ───────────────────────────────────────────────────────────────────
@@ -685,13 +705,46 @@ function refreshApiStatus() {
   }
 }
 
+// ── PERSISTENCE ─────────────────────────────────────────────────────────────────────
+const PLAN_STORAGE_KEY = 'mealPlanner_currentPlan';
+const WEEK_LABEL_KEY = 'mealPlanner_weekLabel';
+const SHOPPING_CATEGORIES_KEY = 'mealPlanner_shoppingCategories';
+const SHOPPING_CHECKED_KEY = 'mealPlanner_shoppingChecked';
+
+function getCheckedSet() {
+  try { return new Set(JSON.parse(localStorage.getItem(SHOPPING_CHECKED_KEY) || '[]')); }
+  catch(e) { return new Set(); }
+}
+function saveCheckedSet(set) {
+  localStorage.setItem(SHOPPING_CHECKED_KEY, JSON.stringify([...set]));
+}
+
 // Run on page load
 window.addEventListener('DOMContentLoaded', () => {
   refreshApiStatus();
+  loadCustomRecipes();
   // Show API key prompt on first visit
   if (!getApiKey()) {
     setTimeout(() => showToast('⚙️ Add your API key in Settings to activate AI'), 1200);
   }
+
+  // Restore last-confirmed plan (survives navigation/reload/closing the tab)
+  try {
+    const savedPlanRaw = localStorage.getItem(PLAN_STORAGE_KEY);
+    if (savedPlanRaw) {
+      const savedPlan = JSON.parse(savedPlanRaw);
+      currentPlan = savedPlan;
+      renderPlan(savedPlan, localStorage.getItem(WEEK_LABEL_KEY));
+    }
+  } catch(e) { console.error('Could not restore saved plan:', e); }
+
+  // Restore last-generated shopping list, including which items were checked
+  try {
+    const savedShoppingRaw = localStorage.getItem(SHOPPING_CATEGORIES_KEY);
+    if (savedShoppingRaw) {
+      renderShoppingList(JSON.parse(savedShoppingRaw));
+    }
+  } catch(e) { console.error('Could not restore saved shopping list:', e); }
 });
 
 // ── GENERATE ──────────────────────────────────────────────────────────────────
@@ -835,12 +888,12 @@ Respond ONLY in this exact JSON format with no other text:
 
   // Merge: kept slots stay as-is, open slots get filled with db picks first, then AI-new picks
   const bFillQueue = [
-    ...dbBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.time ? `${b.time} prep` : '', isNew: false })),
-    ...newBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.note || '', isNew: true }))
+    ...dbBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.time ? `${b.time} prep` : '', isNew: false, ingredients: b.ingredients || '' })),
+    ...newBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.note || '', isNew: true, ingredients: '' }))
   ];
   const dFillQueue = [
-    ...dbDinners.map(d => ({ name: d.name, cuisine: '', protein: d.protein, source: d.source, note: d.time ? `${d.time} prep` : '', isNew: false })),
-    ...newDinners.map(d => ({ name: d.name, cuisine: d.cuisine || '', protein: d.protein || '', source: d.source, note: d.note || '', isNew: true }))
+    ...dbDinners.map(d => ({ name: d.name, cuisine: '', protein: d.protein, source: d.source, note: d.time ? `${d.time} prep` : '', isNew: false, ingredients: d.ingredients || '', link: d.link || '' })),
+    ...newDinners.map(d => ({ name: d.name, cuisine: d.cuisine || '', protein: d.protein || '', source: d.source, note: d.note || '', isNew: true, ingredients: '' }))
   ];
 
   const newBreakfastPlan = [...currentPlan.breakfasts];
@@ -872,6 +925,7 @@ function renderSuggestions(plan) {
       <div class="meal-info">
         <div class="meal-name">${b.name} ${b.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : '<span class="badge" style="font-size:0.6rem;padding:2px 6px;">DB</span>'}</div>
         <div class="meal-meta">${b.source} ${b.note ? '· ' + b.note : ''}</div>
+        ${b.ingredients ? `<div class="meal-meta" style="margin-top:2px;">${b.ingredients}</div>` : (b.isNew ? '<div class="meal-meta" style="margin-top:2px;font-style:italic;">Newly suggested — ingredients confirmed when shopping list generates</div>' : '')}
       </div>
       <div class="meal-actions">
         <button class="btn-icon reject" onclick="swapMeal('breakfast',${i})" title="Swap">↔</button>
@@ -886,6 +940,7 @@ function renderSuggestions(plan) {
       <div class="meal-info">
         <div class="meal-name">${d.name} ${d.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : '<span class="badge" style="font-size:0.6rem;padding:2px 6px;">DB</span>'}</div>
         <div class="meal-meta">${d.cuisine ? d.cuisine + ' · ' : ''}${d.protein || ''} · ${d.source} ${d.note ? '· ' + d.note : ''}</div>
+        ${d.ingredients ? `<div class="meal-meta" style="margin-top:2px;">${d.ingredients}</div>` : (d.isNew ? '<div class="meal-meta" style="margin-top:2px;font-style:italic;">Newly suggested — ingredients confirmed when shopping list generates</div>' : '')}
       </div>
       <div class="meal-actions">
         <button class="btn-icon reject" onclick="swapMeal('dinner',${i})" title="Swap">↔</button>
@@ -901,9 +956,11 @@ function acceptPlan() {
   showToast('✅ Plan saved! Shopping list ready.');
 }
 
-function renderPlan(plan) {
-  const today = new Date();
-  document.getElementById('week-label').textContent = `Week of ${today.toLocaleDateString('en-GB', {day:'numeric',month:'long'})}`;
+function renderPlan(plan, weekLabelOverride) {
+  const label = weekLabelOverride || `Week of ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long'})}`;
+  document.getElementById('week-label').textContent = label;
+  localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plan));
+  localStorage.setItem(WEEK_LABEL_KEY, label);
 
   document.getElementById('breakfast-list').innerHTML = plan.breakfasts.map(b => `
     <div class="meal-row">
@@ -911,6 +968,7 @@ function renderPlan(plan) {
       <div class="meal-info">
         <div class="meal-name">${b.name}</div>
         <div class="meal-meta">${b.source}</div>
+        ${b.ingredients ? `<div class="meal-meta" style="margin-top:2px;">${b.ingredients}</div>` : ''}
       </div>
     </div>
   `).join('');
@@ -920,7 +978,9 @@ function renderPlan(plan) {
       <div class="meal-day">${d.day.slice(0,3)}</div>
       <div class="meal-info">
         <div class="meal-name">${d.name}</div>
-        <div class="meal-meta">${d.cuisine || ''} · ${d.protein || ''} · ${d.source}</div>
+        <div class="meal-meta">${d.cuisine || ''} ${d.cuisine ? '· ' : ''}${d.protein || ''} · ${d.source}</div>
+        ${d.ingredients ? `<div class="meal-meta" style="margin-top:2px;">${d.ingredients}</div>` : ''}
+        ${d.link ? `<a href="${d.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;">View Original →</a>` : ''}
       </div>
     </div>
   `).join('');
@@ -936,18 +996,33 @@ function confirmPlan() {
 async function generateShopping() {
   if (!currentPlan.dinners.length) return;
 
-  const meals = [
-    ...currentPlan.breakfasts.map(b => b.name),
-    ...currentPlan.dinners.map(d => d.name)
-  ].join(', ');
+  // Look up REAL ingredients for any meal that matches our recipe database,
+  // rather than letting the AI guess ingredients (and proteins!) from the name alone.
+  const allMeals = [...currentPlan.breakfasts, ...currentPlan.dinners];
+  const dbLookup = new Map([...RECIPE_DB.breakfasts, ...RECIPE_DB.dinners].map(r => [r.name, r]));
 
-  const prompt = `Generate a shopping list for these meals for 2 adults + 1 toddler (18 months), with enough for next-day lunch leftovers.
-Meals this week: ${meals}
+  const knownLines = [];
+  const unknownNames = [];
+  allMeals.forEach(m => {
+    const match = dbLookup.get(m.name);
+    if (match && match.ingredients) {
+      knownLines.push(`- ${m.name} (${match.protein || 'see ingredients'}): ${match.ingredients}`);
+    } else {
+      unknownNames.push(m.name);
+    }
+  });
+
+  const prompt = `Generate a shopping list for a family of 2 adults + 1 toddler (18 months), with enough for next-day lunch leftovers (so shop for roughly 3 adult + 1 toddler portions per meal).
+
+KNOWN RECIPES — use these EXACT ingredients and proteins, just convert to realistic shopping quantities. Do NOT substitute a different protein or invent ingredients not listed here:
+${knownLines.join('\n') || 'none'}
+
+${unknownNames.length ? `RECIPES WITHOUT KNOWN INGREDIENTS — infer sensible ingredients for these based on the name and Mediterranean/whole-food style:\n${unknownNames.map(n => '- ' + n).join('\n')}` : ''}
 
 Location: Saudi Arabia — use ingredients available in KSA supermarkets (Tamimi, Danube, Panda).
 Diet: Mediterranean, whole foods, no pork.
 
-Group by supermarket section. Give realistic quantities.
+Merge and de-duplicate ingredients that repeat across meals (e.g. combine garlic needed for 3 recipes into one line). Group by supermarket section. Give realistic quantities.
 
 Respond ONLY in this JSON format:
 {
@@ -1001,15 +1076,19 @@ function fallbackShoppingList() {
 }
 
 function renderShoppingList(categories) {
+  localStorage.setItem(SHOPPING_CATEGORIES_KEY, JSON.stringify(categories));
+  const checkedSet = getCheckedSet();
   let html = '';
   let id = 0;
   categories.forEach(cat => {
     html += `<div class="shop-category">${cat.name}</div>`;
     cat.items.forEach(item => {
       const sid = 'si' + (id++);
+      const key = (cat.name + '::' + item.name).replace(/'/g, "\\'");
+      const isChecked = checkedSet.has(cat.name + '::' + item.name);
       html += `
-        <div class="shop-item" id="row-${sid}">
-          <input type="checkbox" id="${sid}" onchange="toggleShop('${sid}')">
+        <div class="shop-item ${isChecked ? 'checked' : ''}" id="row-${sid}">
+          <input type="checkbox" id="${sid}" ${isChecked ? 'checked' : ''} onchange="toggleShop('${sid}','${key}')">
           <label for="${sid}">${item.name}</label>
           <div class="shop-qty">${item.qty} ${item.unit || ''}</div>
         </div>`;
@@ -1018,10 +1097,13 @@ function renderShoppingList(categories) {
   document.getElementById('shopping-content').innerHTML = html;
 }
 
-function toggleShop(id) {
+function toggleShop(id, key) {
   const row = document.getElementById('row-' + id);
   const cb = document.getElementById(id);
   row.classList.toggle('checked', cb.checked);
+  const checkedSet = getCheckedSet();
+  if (cb.checked) checkedSet.add(key); else checkedSet.delete(key);
+  saveCheckedSet(checkedSet);
 }
 
 // ── SWAP ──────────────────────────────────────────────────────────────────────
@@ -1029,26 +1111,41 @@ function swapMeal(type, idx) {
   swapTarget = { type, idx };
   const pool = type === 'dinner' ? RECIPE_DB.dinners : RECIPE_DB.breakfasts;
   const current = type === 'dinner' ? currentPlan.dinners[idx].name : currentPlan.breakfasts[idx].name;
+  const filteredPool = pool.filter(r => r.name !== current);
 
-  document.getElementById('swap-options').innerHTML = pool
-    .filter(r => r.name !== current)
-    .map(r => `
-      <div class="swap-option" onclick="doSwap('${r.name}','${r.source || ''}','${r.cuisine||''}','${r.protein||''}')">
+  document.getElementById('swap-options').innerHTML = filteredPool
+    .map((r, i) => `
+      <div class="swap-option" data-swap-idx="${i}">
         <div class="opt-name">${r.name}</div>
         <div class="opt-meta">${r.source || ''} ${r.cuisine ? '· ' + r.cuisine : ''} ${r.protein ? '· ' + r.protein : ''}</div>
       </div>
     `).join('');
 
+  // Attach handlers in JS rather than inline onclick — recipe names/ingredients can contain
+  // quotes/apostrophes that would otherwise break a string built into an inline attribute.
+  document.querySelectorAll('#swap-options .swap-option').forEach((el, i) => {
+    el.onclick = () => doSwap(filteredPool[i]);
+  });
+
   document.getElementById('swap-modal').classList.add('active');
 }
 
-function doSwap(name, source, cuisine, protein) {
+function doSwap(recipe) {
   if (!swapTarget) return;
   const { type, idx } = swapTarget;
   if (type === 'dinner') {
-    currentPlan.dinners[idx] = { ...currentPlan.dinners[idx], name, source, cuisine, protein };
+    currentPlan.dinners[idx] = {
+      ...currentPlan.dinners[idx],
+      name: recipe.name, source: recipe.source, cuisine: recipe.cuisine || '',
+      protein: recipe.protein || '', ingredients: recipe.ingredients || '', link: recipe.link || '',
+      isNew: false
+    };
   } else {
-    currentPlan.breakfasts[idx] = { ...currentPlan.breakfasts[idx], name, source };
+    currentPlan.breakfasts[idx] = {
+      ...currentPlan.breakfasts[idx],
+      name: recipe.name, source: recipe.source, ingredients: recipe.ingredients || '',
+      isNew: false
+    };
   }
   renderSuggestions(currentPlan);
   closeSwap();
@@ -1061,6 +1158,18 @@ function closeSwap() {
 }
 
 // ── ADD RECIPE ────────────────────────────────────────────────────────────────
+const CUSTOM_RECIPES_KEY = 'mealPlanner_customRecipes';
+
+function loadCustomRecipes() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_RECIPES_KEY) || '[]');
+    saved.forEach(({ type, recipe }) => {
+      if (type === 'Dinner') RECIPE_DB.dinners.push(recipe);
+      else RECIPE_DB.breakfasts.push(recipe);
+    });
+  } catch(e) { console.error('Could not restore custom recipes:', e); }
+}
+
 function addInstagramRecipe() {
   const name = document.getElementById('ig-name').value.trim();
   const ingredients = document.getElementById('ig-ingredients').value.trim();
@@ -1068,15 +1177,56 @@ function addInstagramRecipe() {
 
   const type = document.getElementById('ig-type').value;
   const toddler = document.getElementById('ig-toddler').value;
-  const newRecipe = { id: 'IG' + Date.now(), name, toddler: toddler === 'Yes', time: 30, source: 'Instagram', ingredients };
+  const newRecipe = { id: 'IG' + Date.now(), name, toddler: toddler === 'Yes', time: '30 min', source: 'Instagram', ingredients, protein: '' };
 
   if (type === 'Dinner') RECIPE_DB.dinners.push(newRecipe);
   else RECIPE_DB.breakfasts.push(newRecipe);
 
+  // Persist so it survives a reload — previously this only lived in memory and vanished on refresh
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_RECIPES_KEY) || '[]');
+    saved.push({ type, recipe: newRecipe });
+    localStorage.setItem(CUSTOM_RECIPES_KEY, JSON.stringify(saved));
+  } catch(e) { console.error('Could not save custom recipe:', e); }
+
   document.getElementById('ig-name').value = '';
   document.getElementById('ig-ingredients').value = '';
   showToast(`✅ "${name}" saved to your recipe library!`);
+  renderRecipeLibrary();
 }
+
+// ── RECIPE LIBRARY (browse what's actually in the database) ─────────────
+function renderRecipeLibrary() {
+  const searchEl = document.getElementById('recipe-search');
+  const filterEl = document.getElementById('recipe-filter');
+  if (!searchEl || !filterEl) return;
+  const search = (searchEl.value || '').toLowerCase();
+  const filter = filterEl.value;
+
+  let pool = [];
+  if (filter === 'all' || filter === 'dinner') pool = pool.concat(RECIPE_DB.dinners.map(r => ({ ...r, type: 'dinner' })));
+  if (filter === 'all' || filter === 'breakfast') pool = pool.concat(RECIPE_DB.breakfasts.map(r => ({ ...r, type: 'breakfast' })));
+
+  const filtered = pool.filter(r => {
+    if (!search) return true;
+    const haystack = `${r.name} ${r.protein || ''} ${r.ingredients || ''}`.toLowerCase();
+    return haystack.includes(search);
+  });
+
+  document.getElementById('recipe-count-badge').textContent = `${filtered.length} recipes`;
+
+  document.getElementById('recipe-library').innerHTML = filtered.map(r => `
+    <div class="meal-row" style="align-items:flex-start;">
+      <div class="meal-info">
+        <div class="meal-name">${r.name} <span class="badge" style="font-size:0.6rem;padding:2px 6px;">${r.type === 'dinner' ? '🍽️' : '🌅'}</span></div>
+        <div class="meal-meta">${r.protein ? r.protein + ' · ' : ''}${r.time || ''} ${r.source ? '· ' + r.source : ''}</div>
+        <div class="meal-meta" style="margin-top:4px;">${r.ingredients || '⚠️ No ingredient list saved for this one yet'}</div>
+        ${r.link ? `<a href="${r.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;">View Original →</a>` : ''}
+      </div>
+    </div>
+  `).join('') || '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No recipes match your search.</p>';
+}
+
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg) {
