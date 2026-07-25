@@ -352,6 +352,7 @@
       <div class="card-header">
         <h3>🛒 Shopping List</h3>
         <button class="btn btn-secondary" onclick="generateShopping()" style="font-size:0.72rem;padding:5px 10px;">Regenerate</button>
+        <button class="btn btn-secondary" onclick="exportShoppingToKeep()" style="font-size:0.72rem;padding:5px 10px;margin-left:6px;">Export to Keep</button>
       </div>
       <div id="shopping-content">
         <p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Confirm your meal plan to generate the shopping list.</p>
@@ -996,6 +997,41 @@ function confirmPlan() {
 }
 
 // ── SHOPPING LIST ─────────────────────────────────────────────────────────────
+function exportShoppingToKeep() {
+  const raw = localStorage.getItem(SHOPPING_CATEGORIES_KEY);
+  if (!raw) { showToast('Generate a shopping list first'); return; }
+  let categories;
+  try { categories = JSON.parse(raw); } catch(e) { showToast('No shopping list to export yet'); return; }
+
+  const lines = ['Shopping List'];
+  categories.forEach(cat => {
+    lines.push('', cat.name);
+    (cat.items || []).forEach(item => {
+      const qty = [item.qty, item.unit].filter(Boolean).join(' ');
+      lines.push('- ' + item.name + (qty ? ' (' + qty + ')' : ''));
+    });
+  });
+  const text = lines.join('\n').trim();
+
+  const copyFallback = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Copied! Paste into a new Google Keep note.');
+      }).catch(() => {
+        showToast('Could not copy automatically — please copy the list manually.');
+      });
+    } else {
+      showToast('Sharing and clipboard access are not supported on this browser.');
+    }
+  };
+
+  if (navigator.share) {
+    navigator.share({ title: 'Shopping List', text }).catch(() => copyFallback());
+  } else {
+    copyFallback();
+  }
+}
+
 async function generateShopping() {
   if (!currentPlan.dinners.length) return;
 
