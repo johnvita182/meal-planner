@@ -1054,12 +1054,12 @@ Respond ONLY in this JSON format:
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 4000,
-        messages: [{ role: "user", content: prompt }, { role: "assistant", content: "{" }]
+        messages: [{ role: "user", content: prompt }]
       })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
-    let text = "{" + data.content.map(i => i.text || "").join("");
+    let text = data.content.map(i => i.text || "").join("");
     text = text.replace(/```json|```/g, "").trim();
     const firstBrace = text.indexOf("{");
     const lastBrace = text.lastIndexOf("}");
