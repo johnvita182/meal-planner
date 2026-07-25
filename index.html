@@ -1054,18 +1054,21 @@ Respond ONLY in this JSON format:
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 4000,
-        messages: [{ role: "user", content: prompt }]
+        messages: [{ role: "user", content: prompt }, { role: "assistant", content: "{" }]
       })
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
-    let text = data.content.map(i => i.text || "").join("");
+    let text = "{" + data.content.map(i => i.text || "").join("");
     text = text.replace(/```json|```/g, "").trim();
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1) text = text.slice(firstBrace, lastBrace + 1);
     const list = JSON.parse(text);
     renderShoppingList(list.categories);
   } catch(e) {
     console.error('Shopping list generation failed:', e);
-    showToast('⚠️ Shopping list generation failed — showing placeholder. Tap Regenerate to try again.');
+    showToast('⚠️ Shopping list failed: ' + (e.message || 'unknown error') + ' — showing placeholder.');
     renderShoppingList(fallbackShoppingList());
   }
 }
