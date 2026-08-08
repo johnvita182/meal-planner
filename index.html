@@ -358,6 +358,38 @@
         <p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Confirm your meal plan to generate the shopping list.</p>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header"><h3>➕ Add an Item</h3></div>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">
+        Ran out of milk? Add it here and it appears on everyone's list.
+      </p>
+      <div class="form-group">
+        <label>Item</label>
+        <input type="text" id="add-item-name" placeholder="e.g. Milk"
+               onkeydown="if(event.key==='Enter')addShoppingItem()">
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="text" id="add-item-qty" placeholder="e.g. 2 litres">
+      </div>
+      <div class="form-group">
+        <label>Aisle</label>
+        <select id="add-item-aisle">
+          <option>🥦 Produce</option>
+          <option>🥩 Meat &amp; Seafood</option>
+          <option>🧊 Frozen &amp; Chilled</option>
+          <option>🥛 Dairy &amp; Eggs</option>
+          <option>🥥 Coconut &amp; Plant-based</option>
+          <option>🌾 Grains, Bread &amp; Pasta</option>
+          <option>🥜 Nuts, Seeds &amp; Nut Butters</option>
+          <option>🫙 Canned &amp; Jarred Goods</option>
+          <option>🧴 Sauces, Oils &amp; Condiments</option>
+          <option>🧂 Baking &amp; Spices</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addShoppingItem()">➕ Add to List</button>
+    </div>
   </div>
 
   <!-- ── RECIPES TAB ── -->
@@ -434,89 +466,69 @@
         <span class="badge">Claude learns from this</span>
       </div>
       <div id="history-list">
-        <div class="history-item">
-          <div class="hist-date">7 Jun</div>
-          <div class="hist-info">
-            <div class="hist-name">Baked Lemon Herb Chicken</div>
-            <div class="hist-meta">Dinner · Toddler loved it</div>
-          </div>
-          <div class="stars">★★★★★</div>
-        </div>
-        <div class="history-item">
-          <div class="hist-date">7 Jun</div>
-          <div class="hist-info">
-            <div class="hist-name">Shakshuka</div>
-            <div class="hist-meta">Dinner · Family favourite</div>
-          </div>
-          <div class="stars">★★★★★</div>
-        </div>
-        <div class="history-item">
-          <div class="hist-date">8 Jun</div>
-          <div class="hist-info">
-            <div class="hist-name">Banana Oat Pancakes</div>
-            <div class="hist-meta">Breakfast · Toddler devoured</div>
-          </div>
-          <div class="stars">★★★★★</div>
-        </div>
-        <div class="history-item">
-          <div class="hist-date">14 Jun</div>
-          <div class="hist-info">
-            <div class="hist-name">Lentil & Vegetable Soup</div>
-            <div class="hist-meta">Dinner · Add more spice next time</div>
-          </div>
-          <div class="stars">★★★★☆</div>
-        </div>
-        <div class="history-item">
-          <div class="hist-date">14 Jun</div>
-          <div class="hist-info">
-            <div class="hist-name">Baked White Fish</div>
-            <div class="hist-meta">Dinner · Toddler not keen on fish yet</div>
-          </div>
-          <div class="stars">★★★★☆</div>
-        </div>
+        <p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Loading past weeks…</p>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><h3>Rate Last Week's Meals</h3></div>
       <div id="rate-list">
-        <p style="color:var(--muted);font-size:0.82rem;">Confirm a meal plan first to rate meals here.</p>
+        <p style="color:var(--muted);font-size:0.82rem;">Rating is not switched on yet.</p>
       </div>
     </div>
   </div>
 
 </main>
 
+  <!-- ── AUTH OVERLAY ── -->
+  <div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--cream);align-items:center;justify-content:center;padding:24px;">
+    <div class="card" style="max-width:380px;width:100%;">
+      <div class="card-header"><h3>🌿 Family Meal Planner</h3></div>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:16px;">
+        Enter the family passphrase to unlock. You only need to do this once on each device.
+      </p>
+      <div class="form-group">
+        <label>I am</label>
+        <select id="auth-who">
+          <option value="john">John</option>
+          <option value="jesika">Jesika</option>
+          <option value="family">Someone else</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Family passphrase</label>
+        <input type="password" id="auth-pass" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" id="auth-btn" style="width:100%;" onclick="doLogin()">Unlock</button>
+    </div>
+  </div>
+
   <!-- ── SETTINGS TAB ── -->
   <div id="tab-settings" class="section">
     <div class="card">
       <div class="card-header">
-        <h3>🔑 Anthropic API Key</h3>
-        <span class="badge" id="api-status-badge">Not set</span>
+        <h3>🔐 Family Account</h3>
+        <span class="badge" id="api-status-badge">Locked</span>
       </div>
       <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;">
-        Your API key is saved only in this browser — never sent anywhere except directly to Anthropic's servers when generating meals.
+        Everyone in the family shares one plan. Changes you make appear on the other phones
+        within about 20 seconds. The Anthropic key now lives on the server — nothing to set up per device.
       </p>
       <div class="form-group">
-        <label>API Key</label>
-        <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+        <label>Signed in as</label>
+        <input type="text" id="who-display" readonly>
       </div>
-      <button class="btn btn-primary" onclick="saveApiKey()">💾 Save Key</button>
-      <button class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="clearApiKey()">🗑 Remove Key</button>
+      <button class="btn btn-secondary" style="width:100%;" onclick="signOut()">🚪 Sign out</button>
     </div>
 
     <div class="card">
-      <div class="card-header"><h3>📖 How to get an API key</h3></div>
-      <div style="font-size:0.82rem;line-height:2;color:var(--ink);">
-        <div>1. Go to <strong>console.anthropic.com</strong></div>
-        <div>2. Sign in or create a free account</div>
-        <div>3. Click <strong>API Keys</strong> → <strong>Create Key</strong></div>
-        <div>4. Name it <em>meal-planner</em> and copy it</div>
-        <div>5. Paste it above and tap Save</div>
-        <div style="margin-top:8px;padding:10px;background:var(--green-bg);border-radius:8px;color:var(--green);">
-          💡 Add ~$5 credit at console.anthropic.com/billing.<br>
-          Each weekly plan costs ~$0.01 — $5 lasts years.
-        </div>
+      <div class="card-header"><h3>🔄 Sync</h3></div>
+      <div style="font-size:0.82rem;line-height:1.9;color:var(--ink);">
+        <div id="sync-note" style="display:none;padding:8px;background:var(--green-bg);border-radius:8px;color:var(--green);margin-bottom:8px;"></div>
+        <div>📊 Recipes, plan and shopping list all live in the Google Sheet</div>
+        <div>🔁 Checked automatically every 20 seconds and whenever you reopen the app</div>
+        <div>🔒 Access is protected by the family passphrase</div>
       </div>
     </div>
 
@@ -537,7 +549,7 @@
       <div style="font-size:0.82rem;line-height:1.9;color:var(--ink);">
         <div>Your recipe database lives in Google Sheets.</div>
         <div style="margin-top:10px;">
-          <a href="https://docs.google.com/spreadsheets/d/1hRhHmuph67KQGs8weetFEa-iEpC-bZx-EIeMQDp-WUA/edit" 
+          <a href="https://docs.google.com/spreadsheets/d/1hRhHmuph67KQGs8weetFEa-iEpC-bZx-EIeMQDp-WUA/edit"
              target="_blank"
              style="display:block;background:var(--green);color:white;text-align:center;padding:10px;border-radius:10px;text-decoration:none;font-weight:600;">
             📊 Open Google Sheet
@@ -557,10 +569,14 @@
   </div>
 </div>
 
+<div id="offline-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:998;background:var(--red);color:#fff;text-align:center;padding:6px 12px;font-size:0.78rem;font-weight:500;">
+  📡 Offline — showing the last saved copy. Changes aren't being saved.
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-// ── STATE ─────────────────────────────────────────────────────────────────────
+// ── STATE ───────────────────────────────────────────────────────
 const FAMILY = {
   location: "Saudi Arabia",
   diet: "Mediterranean, no pork, whole foods, toddler 18 months",
@@ -570,80 +586,11 @@ const FAMILY = {
   portions: "2 adults + 1 toddler, enough for next-day lunch leftovers"
 };
 
-// Synced from the Family Meal Planner Google Sheet (Dinner Recipes / Breakfast Recipes tabs).
-// Re-run the sync (ask Claude) whenever new recipes are added to the sheet so this list stays current.
-// Excluded cuisines: none currently — Tagine dishes are deliberately excluded (family doesn't like them).
-const EXCLUDED_CUISINES = ["tagine"]; // lowercase keywords to always filter out of DB pulls + AI generation
+// Excluded cuisines: Tagine dishes are deliberately excluded (family doesn't like them).
+const EXCLUDED_CUISINES = ["tagine"];
 
-const RECIPE_DB = {
-  dinners: [
-    { id:"D001", name:'Sticky Hoisin Beef', protein:'Beef mince', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:['500g beef mince','200g wide rice noodles','2 cups shredded cabbage','1 carrot, julienned','3 spring onions, sliced','3 cloves garlic, minced','3 tbsp hoisin sauce','1 tbsp tamari','1 tbsp dark soy sauce','1 tbsp rice wine vinegar','1 tbsp brown sugar','1 tbsp sesame oil','1/4 cup crushed peanuts','1 lime, cut into wedges'], instructions:['Soak the rice noodles in boiling water for 5-6 minutes until just tender, then drain.','Heat sesame oil in a large wok over high heat and brown the beef mince, breaking it up, about 5 minutes.','Add the garlic, cabbage and carrot and stir-fry for 2-3 minutes until softened.','Whisk the hoisin, tamari, dark soy, vinegar and brown sugar, pour into the pan and toss to coat.','Add the drained noodles and spring onion, tossing for 1-2 minutes until heated through.','Serve topped with crushed peanuts and a squeeze of lime.'], servings:'4', link:'https://simplehomeedit.com/recipe/sticky-hoisin-beef/', linkType:'verified' },
-    { id:"D002", name:'Baked Chicken Rissoles', protein:'Chicken mince', toddler:true, time:'30 min', source:'simplehomeedit.com', ingredients:['500g chicken mince','1 onion, grated','2 cloves garlic, minced','2 tbsp chopped parsley','1/3 cup panko breadcrumbs','1 egg','1 tsp chicken stock powder','1 tsp paprika','1/3 cup grated parmesan'], instructions:['Preheat the oven to 200°C (400°F) and line a baking tray.','Combine all ingredients in a bowl, mixing gently until just combined.','Shape into 12 evenly sized rissoles and place on the tray.','Bake for 20-25 minutes, turning halfway, until golden and cooked through.','Rest for a couple of minutes before serving.'], servings:'4', link:'https://simplehomeedit.com/recipe/baked-chicken-rissoles/', linkType:'verified' },
-    { id:"D003", name:'Creamy Garlic Cucumber Salad', protein:'-', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:['3 Lebanese cucumbers, sliced','1 cup Greek yoghurt','2 cloves garlic, minced','1 tbsp apple cider vinegar','1 tbsp olive oil','salt and pepper, to taste'], instructions:['Slice the cucumbers thinly and place in a bowl.','Whisk the yoghurt, garlic, vinegar and olive oil until smooth.','Pour the dressing over the cucumbers and toss to coat.','Season and chill for 10 minutes before serving.'], servings:'4 (side)', link:'https://simplehomeedit.com/recipe/creamy-garlic-cucumber-salad/', linkType:'verified' },
-    { id:"D004", name:'Chicken Yaki Udon', protein:'Chicken mince', toddler:true, time:'30 min', source:'bitesofberi.com', ingredients:['500g udon noodles','400g chicken mince','3 cloves garlic, minced','1 onion, sliced','2 cups shredded cabbage','1 carrot, julienned','150g mushrooms, sliced','1 red capsicum, sliced','3 spring onions, sliced','3 tbsp dark soy sauce','2 tbsp oyster sauce','1 tbsp honey','1 tbsp mirin','1/2 tsp chilli flakes, optional'], instructions:['Prepare the udon noodles according to packet instructions, then drain.','Cook the chicken mince in a hot wok until browned, about 5 minutes.','Add garlic, onion, mushrooms and capsicum, stir-frying 3-4 minutes.','Stir in the cabbage and cook 1-2 minutes more.','Whisk the soy sauce, oyster sauce, honey and mirin, add to the pan with the noodles and toss well.','Finish with spring onion and chilli flakes if using.'], servings:'4', link:'https://www.bitesofberi.com/chicken-yaki-udon/', linkType:'verified' },
-    { id:"D005", name:'Coconut Lemon Chicken Soup', protein:'Chicken breast', toddler:true, time:'6 hrs low (slow cooker)', source:'quirkycooking.com.au', ingredients:['4cm fresh ginger, sliced','4cm fresh turmeric or 1 tsp ground turmeric','3 cloves garlic','1/4 cup coriander, chopped','2 spring onions, sliced','1 red chilli, whole, optional','4 cups chicken stock','1 can (400ml) coconut milk','600g chicken breast','juice of 2 lemons','1 tbsp coconut sugar','1 tbsp fish sauce'], instructions:['Place the ginger, turmeric, garlic, stock, coconut milk, coconut sugar, fish sauce and whole chicken breasts in the slow cooker.','Cook on low for 6 hours until the chicken is completely tender.','Remove the chicken, shred with two forks, and return to the pot.','Remove the whole chilli if used, then stir in the lemon juice.','Ladle into bowls and top with coriander and spring onion.'], servings:'4', link:'https://quirkycooking.com.au/2009/07/coconut-lemon-chicken-soup/', linkType:'verified' },
-    { id:"D006", name:'Spaghetti Bolognese', protein:'Beef mince', toddler:true, time:'1 hr 30 min', source:'Mangia Mangia', ingredients:['500g beef mince','1 carrot, diced','2 celery stalks, diced','1 onion, diced','3 cloves garlic, minced','700g tomato passata','2 tbsp olive oil','400g spaghetti','splash of milk','salt and pepper'], instructions:['Heat olive oil and sauté the onion, carrot, celery and garlic until softened, about 5 minutes.','Add the beef mince and cook, breaking it up, until browned.','Pour in the passata, season, and simmer uncovered for 30-40 minutes.','Stir in a splash of milk in the last 5 minutes.','Cook the spaghetti in salted boiling water per packet directions, then drain.','Toss the spaghetti through the sauce and serve.'], servings:'4', link:'https://www.mangiamangia.com/', linkType:'unverified' },
-    { id:"D007", name:'Beef Ragu with Pappardelle', protein:'Beef chuck', toddler:true, time:'2 hrs 30 min (slow braise)', source:'Mangia Mangia', ingredients:['800g beef chuck, cut into large chunks','1 carrot, diced','2 celery stalks, diced','1 onion, diced','3 cloves garlic, minced','800g crushed tomatoes','1 bay leaf','2 tbsp olive oil','400g pappardelle','salt and pepper'], instructions:['Heat olive oil in a heavy pot and brown the beef on all sides, then set aside.','Sauté the onion, carrot, celery and garlic in the same pot until softened.','Return the beef with the crushed tomatoes and bay leaf, season, and bring to a simmer.','Cover and braise on low for 2-2.5 hours until the beef falls apart.','Shred the beef into the sauce and discard the bay leaf.','Cook the pappardelle per packet directions, then toss through the ragu.'], servings:'4', link:'https://www.mangiamangia.com/', linkType:'unverified' },
-    { id:"D008", name:'Italian Polpette (Meatballs) in Tomato Sauce', protein:'Beef mince', toddler:true, time:'40 min', source:'Mangia Mangia', ingredients:['500g beef mince','1/2 cup breadcrumbs','1 egg','1/3 cup grated parmesan','2 cloves garlic, minced','2 tbsp chopped parsley','700g crushed tomatoes','2 tbsp olive oil','salt and pepper'], instructions:['Combine the mince, breadcrumbs, egg, parmesan, half the garlic and parsley; season and mix gently.','Roll into 16-18 small meatballs.','Brown the meatballs on all sides in olive oil, then remove.','Add the remaining garlic, then pour in the crushed tomatoes and simmer.','Return the meatballs, cover and simmer 20 minutes until cooked through.','Scatter with remaining parsley before serving.'], servings:'4', link:'https://www.mangiamangia.com/', linkType:'unverified' },
-    { id:"D009", name:'Chicken Cacciatore', protein:'Chicken thighs', toddler:true, time:'45 min', source:'Mangia Mangia', ingredients:['800g chicken thighs','1 onion, sliced','3 cloves garlic, minced','1 bell pepper, sliced','700g crushed tomatoes','1 tsp dried rosemary','2 tbsp olive oil','salt and pepper'], instructions:['Brown the chicken thighs on both sides in olive oil, then remove.','Sauté the onion, garlic and bell pepper in the same pan until softened.','Return the chicken, add the crushed tomatoes and rosemary, and season.','Cover and simmer 30-35 minutes until the chicken is cooked through and tender.','Serve with rice, crusty bread or mashed potato.'], servings:'4', link:'https://www.mangiamangia.com/', linkType:'unverified' },
-    { id:"D010", name:'Creamy Lemon Chicken Noodle Soup', protein:'Chicken breast', toddler:true, time:'30 min', source:'simple.home.edit (Instagram/simplehomeedit.com)', ingredients:['500g chicken breast','1 tsp paprika','1 tsp dried thyme','salt and pepper','2 tbsp olive oil','1 onion, diced','3 cloves garlic, minced','1 carrot, diced','2 celery stalks, diced','2 tbsp butter','1/4 cup flour','4 cups chicken stock','2 cups water','1 tsp dried oregano','150g vermicelli noodles','1 zucchini, diced','1 cup cream','1 cup grated parmesan','2 tbsp parsley','juice of 1 lemon'], instructions:['Season the chicken and sear in olive oil until golden (it finishes cooking later); set aside.','Sauté the onion, garlic, carrot and celery, then stir in butter and flour and cook 1 minute.','Gradually whisk in the stock and water, add oregano and pepper, and bring to a simmer.','Return the chicken, cover, and simmer gently 10 minutes until cooked, then shred.','Add the noodles and zucchini, cooking 2-3 minutes until tender.','Stir the chicken back in with the cream, parmesan, parsley and lemon juice.'], servings:'4', link:'https://simplehomeedit.com/recipe/creamy-lemon-chicken-noodle-soup/', linkType:'verified' },
-    { id:"D011", name:'Stuffed Pita (Arayes)', protein:'Beef or lamb mince', toddler:true, time:'25 min', source:'simple.home.edit (Instagram/simplehomeedit.com)', ingredients:['4 Turkish pita breads','olive oil spray','500g beef or lamb mince','3 cloves garlic, minced','1 onion, grated','1 tsp cumin','1 tsp paprika','2 tbsp chopped coriander','3/4 cup Greek yoghurt','2 tbsp tahini','juice of 1 lemon','1 red onion, finely sliced','1/4 cup white vinegar'], instructions:['Combine the mince, garlic, onion, cumin, paprika and coriander and mix gently.','Cut each pita in half and spread a thin layer of the mixture inside each pocket.','Cook the stuffed pitas in an oiled pan for 4-5 minutes per side until golden and cooked through.','Whisk yoghurt, tahini, lemon juice and a pinch of salt for the dip.','Toss the sliced red onion with vinegar and salt to quick-pickle.','Serve with the yoghurt-tahini dip and pickled onion.'], servings:'4', link:'https://simplehomeedit.com/recipe/stuffed-pita-arayes/', linkType:'verified' },
-    { id:"D012", name:'Drunken Noodles', protein:'Chicken breast', toddler:true, time:'18 min', source:'simple.home.edit (Instagram/simplehomeedit.com)', ingredients:['200g wide rice noodles','1 tbsp sesame oil','500g chicken breast, sliced','1 onion, sliced','3 cloves garlic, minced','1 carrot, julienned','1 bunch bok choy, shredded','4 spring onions, batons','50g Thai basil leaves','3 tbsp oyster sauce','2 tbsp light soy sauce','2 tbsp dark soy sauce','1 tbsp rice wine vinegar','1/2 tbsp fish sauce','1 tbsp brown sugar','crushed peanuts, to serve'], instructions:['Soak the noodles in hot water until just pliable (3-4 min), drain and rinse under cold water.','Whisk oyster sauce, soy sauces, vinegar, fish sauce and brown sugar for the stir-fry sauce.','Cook the chicken in sesame oil over high heat until it starts to colour, about 4 minutes.','Add onion and garlic, stir-frying 30 seconds.','Add carrot, bok choy, noodles and sauce, tossing 2-3 minutes until softened.','Remove from heat, stir through Thai basil, and serve with crushed peanuts.'], servings:'4', link:'https://simplehomeedit.com/recipe/drunken-noodles/', linkType:'verified' },
-    { id:"D013", name:'Garlic Butter Crispy Chicken with Creamy Beans', protein:'Chicken breast', toddler:true, time:'~25 min', source:'eatinghealthymag (Instagram)', ingredients:['600g chicken breast, sliced into strips','1 tbsp olive oil','4 cloves garlic, minced','2 cans (400g each) cannellini beans, drained','1 cup light cooking cream','1/2 cup grated parmesan','1 cup cherry tomatoes, halved','2 cups baby spinach','1/4 tsp red pepper flakes','fresh basil and parsley, to serve'], instructions:['Season the chicken and cook in olive oil until golden and cooked through; set aside.','Sauté the garlic in the same pan for 30 seconds.','Add the beans, cream, parmesan and pepper flakes, stirring until creamy.','Fold in the tomatoes and spinach, cooking until the spinach wilts.','Return the chicken to coat in the creamy beans.','Finish with fresh basil and parsley.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D014", name:'Yellow Curry Meatballs', protein:'Ground chicken or turkey', toddler:true, time:'25 min', source:'eatinghealthymag (Instagram)', ingredients:['500g ground chicken or turkey','3 cloves garlic, minced','1 tbsp grated ginger','1 egg white','1/3 cup breadcrumbs','2 tbsp yellow curry paste, divided','1 can (400ml) light coconut milk','1 cup chicken stock','1 tsp fish sauce','coriander and lime, to serve'], instructions:['Combine mince, garlic, ginger, egg white, breadcrumbs and 1 tbsp curry paste, then roll into meatballs.','Brown the meatballs on all sides, then remove.','Fry the remaining curry paste for a minute until fragrant.','Pour in coconut milk, stock and fish sauce, and bring to a simmer.','Return the meatballs and simmer 8-10 minutes until cooked through.','Finish with coriander and lime, and serve over rice.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D015", name:'Crispy Gochujang Chicken', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag (Instagram)', ingredients:['600g chicken breast, diced','3 tbsp cornstarch','1 tbsp sesame oil','1 tbsp gochujang paste','1 tbsp low-sodium soy sauce','1 tbsp honey','1 tbsp rice vinegar','1 clove garlic, minced','cooked rice, spring onion and sesame seeds, to serve'], instructions:['Toss the chicken in cornstarch until lightly coated.','Whisk gochujang, soy sauce, honey, vinegar and garlic for the glaze.','Sear the chicken in sesame oil, leaving it undisturbed so it turns golden and crisp.','Once cooked through, pour in the glaze and toss for about a minute until sticky.','Serve over rice, finished with spring onion and sesame seeds.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D016", name:'Sweet Potato Soup with Cauliflower Crumbles', protein:'Vegetarian', toddler:true, time:'30 min', source:'eatinghealthymag (Instagram)', ingredients:['1 large sweet potato, diced','1/2 cauliflower, florets','1 onion, chopped','4 cups vegetable or chicken stock','1 tsp cumin','1 tsp paprika','2 tbsp olive oil','fresh coriander, to serve'], instructions:['Preheat the oven to 200°C (400°F). Toss the sweet potato and cauliflower with spices and oil, and roast 25 minutes, setting aside a handful for topping.','Soften the onion in a pot over medium heat.','Add the roasted vegetables and stock, and simmer 5 minutes.','Blend until completely smooth, thinning with extra stock if needed.','Top with the reserved roasted vegetables and coriander.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D017", name:'Caramelized Beef with Peanut Noodles', protein:'Ground beef', toddler:true, time:'20 min', source:'eatinghealthymag (Instagram)', ingredients:['500g ground beef','250g egg noodles','2 tbsp peanut butter','1 tbsp low-sodium soy sauce','1 tbsp honey','1 tbsp rice vinegar','2 cloves garlic, minced','1 tbsp sesame oil','1/4 cup peanuts, chopped','2 spring onions, sliced','chilli crisp, to serve'], instructions:['Cook the noodles just under packet timing, drain, reserving some water.','Brown the beef in sesame oil over high heat, letting it sit undisturbed to caramelise.','Add garlic and cook 30 seconds.','Whisk peanut butter, soy sauce, honey and vinegar with a splash of noodle water, then pour in.','Toss the noodles through the beef and sauce until coated.','Top with peanuts, spring onion and chilli crisp.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D018", name:'Creamy Chicken and Gnocchi', protein:'Chicken breast', toddler:true, time:'20 min', source:'eatinghealthymag (Instagram)', ingredients:['500g chicken breast, diced','500g gnocchi','2 cups baby spinach','3/4 cup Greek yoghurt or light cream','3 cloves garlic, minced','1/2 cup grated parmesan','1 tsp mixed Italian herbs'], instructions:['Sear the chicken until golden and just cooked, then remove.','Cook the gnocchi in the same pan until golden on the edges.','Add garlic and spinach, cooking until wilted.','Off the heat, stir in the yoghurt, parmesan and herbs until creamy.','Return the chicken, toss everything together, season and serve.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D019", name:'BBQ Salmon with Mango Avocado Salsa', protein:'Salmon (fish)', toddler:false, time:'20 min', source:'eatinghealthymag (Instagram)', ingredients:['4 salmon fillets, about 130g each','1 tbsp BBQ seasoning or smoked paprika','2 tsp honey','3 cups cooked rice','1 mango, diced','1 avocado, diced','1/2 red onion, finely diced','fresh coriander','lime wedges'], instructions:['Pat the salmon dry and rub with BBQ seasoning and honey.','Toss mango, avocado, red onion and coriander with salt and lime for the salsa.','Sear the salmon skin-side down 4-5 minutes, then flip 2-3 minutes until just cooked.','Spoon rice into bowls and top with salmon.','Pile the salsa over the top and finish with extra lime.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D020", name:'One-pan Greek Chicken and Risoni (Orzo)', protein:'Chicken thighs (bone-in)', toddler:true, time:'1 hr 10 min', source:'simplehomeedit.com', ingredients:['8 bone-in chicken thigh cutlets, ~1.2-1.5kg','3 tbsp olive oil','3 tbsp lemon juice','3 cloves garlic, minced','1 tsp dried oregano','1 tsp paprika','1 tsp brown sugar','300g risoni (orzo)','3.5 cups hot chicken stock','100g baby spinach','100g grated parmesan','crumbled feta, to serve'], instructions:['Preheat oven to 200°C (400°F). Combine oil, lemon juice, garlic, oregano, paprika and sugar in a baking dish, add chicken and toss to coat.','Roast skin-side up for 35 minutes until golden.','Scatter the risoni around the chicken and pour over hot stock.','Return to the oven 18-20 minutes until risoni is tender and liquid mostly absorbed.','Remove chicken, stir spinach and parmesan through the risoni until creamy, then return chicken on top.','Serve with crumbled feta and extra lemon.'], servings:'4', link:'https://simplehomeedit.com/recipe/one-pan-greek-chicken-and-risoni/', linkType:'verified' },
-    { id:"D021", name:'Sesame-soy Dumpling Salad', protein:'Vegetable dumplings', toddler:true, time:'35 min', source:'simplehomeedit.com', ingredients:['3 tbsp tamari','2 tbsp rice wine vinegar','1 tbsp sesame oil','1 clove garlic, minced','1 tsp grated ginger','1 tbsp brown sugar','1 tbsp sesame seeds','1 tbsp crispy chilli oil, optional','150g shredded cabbage','1 cucumber, sliced','2 spring onions, sliced','1/2 red onion, sliced','24 vegetable dumplings, cooked per packet','coriander and peanuts, to serve'], instructions:['Whisk tamari, vinegar, sesame oil, garlic, ginger, sugar and sesame seeds for the dressing.','Cook the dumplings according to packet instructions.','Toss the cabbage, cucumber, spring onion and red onion in a bowl.','Top with warm dumplings and pour over the dressing.','Garnish with coriander, peanuts and a drizzle of chilli oil.'], servings:'4', link:'https://simplehomeedit.com/recipe/sesame-soy-dumpling-salad/', linkType:'unverified' },
-    { id:"D022", name:'One-pan Chicken and Broccoli Ramen Noodles', protein:'Chicken thighs (can sub breast)', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:['1/4 cup honey','2 tbsp dark soy sauce','2 tbsp oyster sauce','2 tbsp mirin','1 tbsp tomato ketchup','1 tbsp sesame oil','600g diced chicken thighs or breast','2 spring onions, sliced','3 cloves garlic, minced','2 tsp grated ginger','1 head broccoli, florets','4 packets ramen noodles, seasoning discarded','2 cups water'], instructions:['Whisk honey, soy sauce, oyster sauce, mirin and ketchup for the sauce.','Cook the chicken in sesame oil for 5 minutes until browned.','Add spring onion whites, garlic and ginger for a minute, then broccoli, cover 1 minute.','Pour in the sauce and toss, then push aside and add noodles to the empty space.','Pour water over the noodles, cover 2-3 minutes, then toss everything together.','Serve topped with spring onion greens.'], servings:'4', link:'https://simplehomeedit.com/recipe/one-pan-chicken-and-broccoli-ramen-noodles/', linkType:'verified' },
-    { id:"D023", name:'Gyros Smashed Tacos', protein:'Beef or lamb mince', toddler:true, time:'45 min', source:'simplehomeedit.com', ingredients:['500g beef or lamb mince','1 tsp garlic powder','1 tsp onion powder','1 tsp dried oregano','1 tsp cumin','1/2 tsp paprika','8 mini flour tortillas','2 tbsp olive oil','tzatziki, sliced tomatoes, sumac onions and lemon wedges, to serve'], instructions:['Combine the mince with the spices, mixing well.','Divide into 8 portions and press each onto a tortilla in a thin layer.','Cook tortillas meat-side down in oil for 2-3 minutes until browned, then flip 30 seconds.','Repeat with remaining tortillas.','Top with tzatziki, tomato and sumac onions.','Serve with lemon wedges.'], servings:'4', link:'https://simplehomeedit.com/recipe/gyros-smashed-tacos/', linkType:'unverified' },
-    { id:"D024", name:'Chicken Schnitzel with Creamy Mushroom Sauce', protein:'Chicken breast', toddler:true, time:'50 min', source:'simplehomeedit.com', ingredients:['4 chicken breasts, halved horizontally and pounded thin','1/2 cup flour','3 eggs, whisked','1.5 cups panko breadcrumbs','oil for cooking','1 tbsp olive oil','300g mushrooms, sliced','2 tbsp butter','2 cloves garlic, minced','1.5 cups cream','1 tsp dijon mustard','1 tsp chicken stock powder','fresh thyme','grated parmesan'], instructions:['Set up flour, egg and panko in separate bowls.','Coat each piece of chicken in flour, then egg, then panko.','Shallow-fry 4-5 minutes per side until golden and cooked through, then rest on paper towel.','Cook mushrooms in olive oil until golden, then add butter and garlic for 30 seconds.','Pour in cream, mustard and stock powder, simmer until thickened, stir in thyme and parmesan.','Serve the schnitzels topped with the mushroom sauce.'], servings:'4', link:'https://simplehomeedit.com/recipe/chicken-schnitzel-with-creamy-mushroom-sauce/', linkType:'unverified' },
-    { id:"D025", name:'Korean Beef Rice Bowls', protein:'Ground beef', toddler:true, time:'20 min', source:'simplehomeedit.com', ingredients:['2 cloves garlic, minced','1 tsp grated ginger','3 tbsp soy sauce','2 tbsp brown sugar','1 tbsp sesame oil','1 tbsp gochujang','1 tsp rice vinegar','1 tbsp sesame seeds','2 tbsp olive oil','500g ground beef','2 spring onions, sliced','3 tbsp mayonnaise','1 tsp gochujang, for the drizzle','1/2 tsp rice vinegar, for the drizzle','4 cups cooked jasmine rice','kimchi, carrot and cucumber, to serve'], instructions:['Whisk garlic, ginger, soy sauce, sugar, sesame oil, gochujang, vinegar and sesame seeds for the sauce.','Brown the beef in olive oil, breaking it up as it cooks.','Pour in the sauce and simmer 2-3 minutes, stirring through most of the spring onion.','Whisk mayonnaise, extra gochujang and vinegar for the drizzle.','Divide rice among bowls, top with beef, kimchi, carrot and cucumber.','Finish with the gochujang mayo and remaining spring onion.'], servings:'4', link:'https://simplehomeedit.com/recipe/korean-beef-rice-bowls/', linkType:'verified' },
-    { id:"D026", name:'Turkey Sausage & Bacon Rigatoni', protein:'Turkey sausage & turkey bacon', toddler:true, time:'20 min', source:'eatinghealthymag (Instagram)', ingredients:['300g rigatoni','300g turkey sausage, casing removed','150g turkey bacon, chopped','1.5 cups passata','1/3 cup Greek yoghurt','2 cloves garlic, minced','1/2 onion, diced','1/4 tsp chilli flakes','fresh basil'], instructions:['Cook the rigatoni until just tender, reserving a cup of pasta water.','Brown the turkey sausage and bacon, breaking up the sausage, until deeply golden.','Add onion and garlic, cooking until soft, then stir in chilli flakes.','Pour in the passata and simmer 5 minutes.','Off the heat, stir through the yoghurt until creamy, then toss through the rigatoni with a splash of pasta water.','Finish with torn basil and black pepper.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D027", name:'Sweet and Sour Turkey', protein:'Turkey thigh (veal also works)', toddler:true, time:'35 min', source:'simplehomeedit.com', ingredients:['600g turkey thigh, bite-sized pieces','1 tbsp soy sauce','2 cloves garlic, minced','1 tsp grated ginger','1/4 tsp bicarbonate of soda','1 egg','60g cornflour','oil for frying','1 tbsp cornflour, for sauce','1 tbsp water','1 tbsp soy sauce','55g brown sugar','60ml pineapple juice','80ml apple cider vinegar','80g tomato ketchup','1 onion, diced','1 red capsicum, diced','1 green capsicum, diced','1/2 cup pineapple chunks'], instructions:['Marinate the turkey in soy sauce, garlic, ginger and bicarbonate of soda for 15 minutes.','Coat in egg then cornflour, and shallow-fry in batches until golden and cooked through.','Mix the sauce cornflour with water, then whisk in remaining sauce ingredients.','Stir-fry the onion and capsicum for 1-2 minutes until lightly charred.','Add the sauce and cook until thickened and glossy.','Return the turkey and pineapple, toss to coat, and serve with rice.'], servings:'4', link:'https://simplehomeedit.com/recipe/easy-sweet-and-sour-pork/', linkType:'unverified' },
-    { id:"D028", name:'Korean Ground Turkey Sesame Lettuce Cups with Mango Salsa', protein:'Ground turkey', toddler:true, time:'10 min prep + 12 min cook (22 min total)', source:'eatinghealthymag (Instagram)', ingredients:['500g ground turkey','1 clove garlic, minced','1 tbsp gochujang','1 tbsp soy sauce','1 tsp sesame seeds','cooked rice, for toddler-friendly serving','1/2 mango, diced','1/2 red bell pepper, diced','coriander','2 tbsp Greek yoghurt','1 tsp sriracha'], instructions:['Brown the turkey in a hot pan with the garlic until cooked through.','Stir in the gochujang and soy sauce, coating the turkey while hot.','Combine mango, red pepper and coriander for the salsa.','Mix yoghurt and sriracha for a cooling dipping sauce.','Serve the turkey over rice (or in lettuce cups for adults), topped with salsa, sesame seeds and yoghurt sauce.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D029", name:'Tuna Poke Bowl', protein:'Tuna (canned, fish)', toddler:false, time:'~15 min (no cooking, assembly only)', source:'eatinghealthymag (Instagram)', ingredients:['2 cans (140g each) tuna in water, drained','3 cups cooked brown rice','1 cucumber, diced','1/2 cup shelled edamame','1 tomato, diced','1 cup shredded red cabbage','1 avocado, diced','microgreens','1 tbsp sesame seeds','2 tbsp low-sodium soy sauce','1 tsp sriracha','1 tsp rice vinegar'], instructions:['Mix the drained tuna with half the soy sauce and the rice vinegar.','Divide the rice among bowls.','Arrange cucumber, tomato, edamame, cabbage and avocado over the rice in sections.','Spoon the seasoned tuna over the top.','Drizzle with remaining soy sauce and sriracha, finish with sesame seeds and microgreens.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"D030", name:'Healthy Turkey Bacon Caesar Salad', protein:'Turkey bacon & eggs', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 eggs, hard boiled and chopped','200g turkey bacon, diced and cooked crisp','1 iceberg lettuce, chopped','1/2 cup grated parmesan','1/2 cup Greek yoghurt','1 tbsp nutritional yeast','2 tbsp olive oil','juice of 1 lemon','1/2 tsp onion powder','1/2 tsp garlic powder','salt and pepper'], instructions:['Whisk yoghurt, nutritional yeast, olive oil, lemon juice, onion powder and garlic powder for the dressing.','Toss the lettuce with the dressing.','Top with chopped egg, crispy turkey bacon and parmesan.','Season with extra black pepper and serve immediately.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D031", name:'Teriyaki Salmon with Asian Greens', protein:'Salmon (fish)', toddler:false, time:'15 min (+20 min marinate)', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 salmon fillets','3cm fresh ginger, grated','2 cloves garlic, minced','3 tbsp tamari','2 tbsp mirin','1 tsp sweetener of choice','1 tbsp olive oil','2 bunches bok choy','1 head broccoli, florets'], instructions:['Whisk ginger, garlic, tamari, mirin and sweetener, then marinate the salmon in half for 20 minutes.','Steam or blanch the bok choy and broccoli until just tender.','Sear the salmon in olive oil 3-4 minutes per side.','Pour in remaining marinade and simmer a minute until slightly sticky.','Serve the salmon over the greens, spooning over the pan sauce.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D032", name:'Lemon and Garlic Chicken (rotating sides)', protein:'Chicken breast/tenders/thighs', toddler:true, time:'~40-45 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['800g chicken breast, tenders or thighs','2 tbsp olive oil','3 cloves garlic, minced','1 tsp dried oregano','1 tsp dried thyme','salt and pepper','zest of 1 lemon','SIDE OPTION A: 1 pumpkin cubed + 1 eggplant cubed, roasted','SIDE OPTION B: mixed vegetables (onion, eggplant, zucchini, mushroom), grilled','SIDE OPTION C: 2 heads broccoli mashed with cream + 1 bunch asparagus'], instructions:['Combine olive oil, garlic, oregano, thyme, salt, pepper and lemon zest; coat the chicken and marinate 15 minutes.','Cook the chicken in a hot pan or grill until golden and cooked through, 6-8 minutes per side.','For pumpkin & eggplant: roast at 200°C (400°F) for 25-30 minutes.','For BBQ vegetables: grill sliced vegetables alongside the chicken.','For broccoli mash: steam broccoli until soft, blend with cream, and blanch asparagus.','Serve the chicken with your chosen side.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D033", name:'Keto Pad Thai', protein:'Tofu', toddler:true, time:'20 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['400g firm tofu, cubed','1 head broccoli, florets','1 red capsicum, sliced','2cm ginger, grated','1 tbsp olive oil','2 spring onions, sliced','1/4 cup almonds, chopped','1/2 tsp chilli flakes','2 tbsp almond butter','1 tbsp rice wine vinegar','1 tbsp fish sauce','1 tbsp tamari','juice of 1 lime','200g rice noodles (or Slendier pasta)'], instructions:['Cook the rice noodles per packet instructions.','Fry the tofu in olive oil until golden on all sides, then remove.','Stir-fry broccoli, capsicum and ginger 2-3 minutes.','Whisk almond butter, vinegar, fish sauce, tamari and lime juice.','Return the tofu with the noodles and sauce, tossing to coat.','Top with spring onion, almonds and chilli flakes.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D034", name:'Turkey Chops with Pumpkin Mash and Broccoli', protein:'Turkey tenderloin', toddler:true, time:'~30 min (+marinate)', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 turkey tenderloin steaks','2 spring onions, sliced','2 tbsp tamari','2cm ginger, grated','1 tbsp olive oil','1 tsp sweetener','2 cloves garlic, minced','700g butternut pumpkin, cubed','1 tbsp coconut oil','1/4 cup coconut cream','1/4 cup stock','1 head broccoli, florets'], instructions:['Marinate the turkey in tamari, ginger, garlic and sweetener for 15 minutes.','Steam the pumpkin until tender, then mash with coconut oil, coconut cream and stock.','Steam or blanch the broccoli until just tender.','Cook the turkey in olive oil 4-5 minutes per side until golden and cooked through.','Serve with the pumpkin mash and broccoli, garnished with spring onion.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D035", name:'Zucchini Noodles with Portobello Bolognese', protein:'Vegetarian (mushroom)', toddler:true, time:'20-25 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['2 tbsp olive oil','400g portobello mushrooms, diced','1 carrot, diced','1 celery stalk, diced','1 onion, diced','3 cloves garlic, minced','2 tbsp tomato paste','700g crushed tomatoes','1 tsp dried oregano','1 tsp dried basil','4 zucchini, spiralised','1/2 cup grated parmesan','2 tbsp hemp seeds','1/4 tsp chilli flakes'], instructions:['Sauté onion, carrot, celery and garlic in olive oil until softened.','Add mushrooms and cook 5-6 minutes until browned.','Stir in tomato paste, then crushed tomatoes, oregano and basil, and simmer 15-20 minutes.','Lightly sauté the zucchini noodles for 2 minutes (or serve raw).','Spoon the mushroom bolognese over the zucchini noodles.','Top with parmesan, hemp seeds and chilli flakes.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D036", name:'Turkey Bacon BLT', protein:'Turkey bacon', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['8 slices seeded bread','2 tomatoes, sliced','1 avocado, sliced','250g turkey bacon, cooked crisp','iceberg lettuce leaves'], instructions:['Toast the bread until golden.','Cook the turkey bacon until crisp.','Layer lettuce, tomato, avocado and turkey bacon between two slices of toast.','Cut in half and serve immediately.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D037", name:'Mexican Chicken Salad Bowl', protein:'Chicken breast', toddler:true, time:'15 min (+marinate)', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['600g chicken breast','juice of 2 limes','1 tsp chilli powder','1 tsp onion powder','2 cloves garlic, minced','1 tsp cumin','1 tsp dried coriander','1/2 tsp ground ginger','2 tbsp olive oil','lettuce','1 cup cherry tomatoes, halved','1/2 red onion, sliced','1 cucumber, diced','1 avocado, diced','sliced jalapenos','1/2 cup Greek yoghurt'], instructions:['Marinate the chicken in lime juice, chilli powder, onion powder, garlic, cumin, coriander, ginger and oil for 20 minutes.','Cook the chicken in a hot pan 5-6 minutes per side, then slice.','Arrange lettuce, tomatoes, red onion, cucumber and avocado in bowls.','Top with sliced chicken and jalapenos.','Finish with a dollop of Greek yoghurt.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D038", name:'Almond and Parmesan Baked Fish with Garlic Greens', protein:'White fish', toddler:false, time:'20-25 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 white fish fillets','1/2 cup almond flour','1/3 cup grated parmesan','1 egg white, whisked','2 zucchini, sliced','1 bunch broccolini','200g green beans','3 cloves garlic, minced','2 tbsp olive oil','fresh basil','dill','1/4 tsp chilli flakes'], instructions:['Preheat the oven to 200°C (400°F). Combine almond flour and parmesan on a plate.','Dip each fillet in egg white, then press into the almond-parmesan mixture.','Bake on a lined tray for 12-15 minutes until golden and cooked through.','Sauté the zucchini, broccolini and green beans with garlic and olive oil until tender.','Serve the fish over the garlic greens, finished with basil, dill and chilli flakes.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D039", name:'Turkey Bacon and Tofu Fry Up', protein:'Turkey bacon & tofu', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['400g firm tofu, cubed','200g turkey bacon, chopped','2 tbsp olive oil','2 cloves garlic, minced','1 red capsicum, sliced','1 zucchini, sliced','1/2 head cauliflower, florets','2 cups spinach','200g regular noodles','2 tbsp red pesto'], instructions:['Cook the noodles per packet instructions.','Cook the turkey bacon in olive oil until crisp, then remove.','Fry the tofu in the same pan until golden on all sides.','Add garlic, capsicum, zucchini and cauliflower, stir-frying until tender.','Stir in spinach until wilted, then add noodles, pesto and turkey bacon, tossing to combine.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D040", name:'Curried Lamb Cutlets with Cauliflower Mash and Green Beans', protein:'Lamb', toddler:true, time:'~25 min (+marinate)', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['8 lamb cutlets','1 tbsp red or yellow curry paste','1 tbsp tomato paste','juice of 1 lime','1 tsp dried mint','salt and pepper','1 head cauliflower, florets','2 tbsp butter or olive oil','2 cloves garlic, minced','1/4 cup grated parmesan','2 tbsp almond milk','200g green beans'], instructions:['Mix curry paste, tomato paste, lime juice and mint, rub over the cutlets and marinate 15 minutes.','Steam the cauliflower until very tender, then blend with butter, garlic, parmesan and almond milk.','Blanch the green beans until just tender.','Sear the cutlets 2-3 minutes per side for medium.','Serve with the cauliflower mash and green beans.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D041", name:'10 Minute Cheats Pasta', protein:'Vegetarian', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['300g pasta','2 cups jarred tomato pasta sauce','1 bunch broccolini','2 cloves garlic, minced','1 tbsp olive oil','1/4 tsp chilli flakes','1 tbsp nutritional yeast','fresh basil'], instructions:['Cook the pasta until al dente, adding broccolini for the last 2 minutes; drain.','Sauté the garlic in olive oil for 30 seconds.','Add the tomato sauce and chilli flakes, simmer 2-3 minutes.','Toss the pasta and broccolini through the sauce.','Top with nutritional yeast and fresh basil.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D042", name:'One Pan Baked Chicken, Broccoli and Pumpkin', protein:'Chicken thighs', toddler:true, time:'~35-40 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['800g skinless chicken thighs','1 head broccoli, florets','700g pumpkin, cubed','1 red onion, wedges','3 cloves garlic, minced','3 tbsp olive oil','1 tbsp dried Italian herbs','salt and pepper'], instructions:['Preheat oven to 200°C (400°F).','Toss chicken, pumpkin and red onion with oil, garlic, herbs, salt and pepper on a tray.','Roast 20 minutes, then add broccoli and toss in the pan juices.','Return to the oven 15-20 minutes until chicken is cooked and vegetables tender.','Serve straight from the tray.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D043", name:'Green and Lean Salmon Bake', protein:'Salmon (fish)', toddler:false, time:'20-25 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 salmon fillets','3 cloves garlic, minced','juice and zest of 1 lemon','2 tbsp olive oil','salt','400g brussels sprouts, halved','1 bunch asparagus','1 head broccoli, florets','fresh parsley'], instructions:['Preheat oven to 200°C (400°F).','Toss brussels sprouts and broccoli with half the oil, garlic and salt, roast 10 minutes.','Add salmon and asparagus, drizzle with remaining oil, garlic, lemon juice and zest.','Bake a further 12-15 minutes until salmon is just cooked through.','Scatter with parsley and serve.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D044", name:'10 Minute Red Curry Stir-fry', protein:'Tofu', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['400g firm tofu, cubed','1 tbsp coconut oil','2 cloves garlic, minced','1 bunch bok choy','1 head broccoli, florets','1/2 cup light coconut cream','2 tbsp red curry paste','fresh coriander','1/4 tsp chilli flakes','alfalfa or broccoli sprouts','1 tbsp coconut aminos or tamari'], instructions:['Fry the tofu in coconut oil until golden on all sides.','Add garlic, bok choy and broccoli, stir-frying 2-3 minutes.','Stir in curry paste, coconut cream and coconut aminos, simmer 2-3 minutes.','Serve topped with coriander, sprouts and chilli flakes.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D045", name:'Roast Chicken and Avocado Salad', protein:'Leftover roast chicken', toddler:true, time:'5 min (uses leftovers)', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['2 cups shredded leftover roast chicken','1 avocado, diced','lettuce','1 cucumber, diced','1 cup cherry tomatoes, halved','1/2 red onion, sliced','salt and pepper','olive oil and lemon juice, to dress'], instructions:['Arrange lettuce, cucumber, tomatoes and red onion in a bowl.','Top with shredded chicken and diced avocado.','Season and dress with a little olive oil and lemon juice.','Serve with rice or bread on the side for extra carbs.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D046", name:'Red Curry Turkey Steaks with Fresh Herb Salad', protein:'Turkey breast', toddler:true, time:'15 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 turkey breast steaks','1 tbsp fish sauce','1 tbsp red curry paste','1 tbsp coconut oil','1 tbsp olive oil','1 tsp sweetener','fresh coriander','1 red capsicum, sliced','1 cup snow peas','2 cups rocket'], instructions:['Mix fish sauce, curry paste and sweetener, coat the turkey and marinate 10 minutes.','Cook the turkey in coconut oil 3-4 minutes per side, then slice.','Toss capsicum, snow peas, rocket and coriander with olive oil for the salad.','Serve the sliced turkey over the salad.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D047", name:'Creamy Vegan Green Pesto Pasta', protein:'Vegetarian/vegan', toddler:true, time:'15 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['1 avocado','2 cups kale or spinach','3 cloves garlic','juice of 1 lemon','1 cup fresh basil','1/4 cup pine nuts','1/4 cup olive oil','water, as needed','300g pasta (or edamame pasta)'], instructions:['Cook the pasta and drain, reserving some pasta water.','Blend avocado, kale, garlic, lemon juice, basil, pine nuts and olive oil until smooth, thinning with pasta water.','Toss the pasta through the pesto.','Season to taste and serve immediately.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D048", name:'Keto Zucchini Fritters with Rocket, Tomatoes and Pesto', protein:'Vegetarian', toddler:true, time:'20 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 zucchini, grated and squeezed dry','1/2 cup grated parmesan or nutritional yeast','1/2 cup almond meal','3 eggs','salt and pepper','olive oil or butter, for cooking','2 cups rocket','1 cup cherry tomatoes, halved','2 tbsp low-carb pesto','2 tbsp coconut yoghurt'], instructions:['Combine grated zucchini, parmesan, almond meal and eggs, and season well.','Spoon small portions into a hot oiled pan, flattening slightly.','Cook 3-4 minutes per side until golden and set.','Toss rocket and tomatoes with pesto and coconut yoghurt.','Serve the fritters alongside the dressed salad.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"D049", name:'Grilled Eggplant and Lamb with Mint, Feta & Spinach Salad', protein:'Lamb', toddler:true, time:'15-20 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['3 tbsp olive oil','1 tbsp red or white wine vinegar','1 tsp fresh oregano','salt and pepper','600g lamb fillet','1 eggplant, sliced','fresh mint','100g feta, crumbled','2 cups spinach','juice of 1 lemon'], instructions:['Whisk olive oil, vinegar, oregano, salt and pepper.','Brush the eggplant with some of the dressing and grill until soft and lightly charred.','Season the lamb and cook 3-4 minutes per side for medium, then rest and slice.','Toss spinach with remaining dressing and lemon juice.','Arrange eggplant, lamb, feta and mint over the spinach and serve.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' }
-  ],
-  breakfasts: [
-    { id:"B001", name:'Smashed Cottage Cheese Scramble with Bagel Crust', toddler:true, time:'5 min prep + 15 min cook (20 min total)', source:'eatinghealthymag (Instagram)', ingredients:['4 everything bagels','2 cups cottage cheese','8 large eggs','1 cup shredded cheese','4 tbsp Greek yoghurt','fresh parsley','salt and pepper','everything bagel seasoning'], instructions:['Preheat oven to 190°C (375°F). Slice the bagels in half and lightly toast.','Whisk cottage cheese, eggs, yoghurt, salt and pepper until smooth.','Spoon generously onto each bagel half.','Top with shredded cheese and everything bagel seasoning.','Bake 12-15 minutes until set, broiling the last minute for colour.','Finish with parsley before serving.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"B002", name:'Cinnamon Roll Granola Bowl', toddler:true, time:'~10 min (assembly only)', source:'eatinghealthymag (Instagram)', ingredients:['2 cups plain Greek yoghurt','1 1/3 cups cinnamon granola','2 cups blueberries','4 tbsp almond butter','4 tsp honey','4 tsp coconut flakes'], instructions:['Divide the yoghurt among bowls.','Scatter blueberries around the yoghurt.','Top generously with granola.','Warm the almond butter slightly and drizzle over with honey.','Finish with coconut flakes and serve.'], servings:'4', link:'https://www.instagram.com/eatinghealthymag/', linkType:'account' },
-    { id:"B003", name:'One Minute Keto Mug Bread with Avocado', toddler:true, time:'2 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['1 cup almond flour, total','4 eggs','2 tsp baking powder, total','pinch of salt','4 tsp coconut oil or butter','1 avocado, sliced, to serve'], instructions:['Mix 1/4 cup almond flour, 1 egg, 1/2 tsp baking powder, a pinch of salt and 1 tsp melted coconut oil per mug, repeating for each serving.','Microwave each mug for 60-90 seconds until set.','Turn out and slice, or pan-fry briefly for a firmer crust.','Top with sliced avocado to serve.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B004", name:'Raspberry and Coconut Chia Pudding', toddler:true, time:'5 min prep + overnight chill', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['1 cup chia seeds','1 tsp vanilla extract','4 cups coconut milk','1 tsp cinnamon','pinch of salt','1 cup Greek or coconut yoghurt','2 cups raspberries','1/4 cup pumpkin seeds'], instructions:['Whisk chia seeds, vanilla, coconut milk, cinnamon and salt together.','Cover and refrigerate overnight, stirring once after 30 minutes.','Stir in the yoghurt in the morning.','Top with raspberries and pumpkin seeds.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B005", name:'Berry Breakfast Bowl', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['2 cups Greek or coconut yoghurt','2 cups mixed berries','1/2 cup almonds, chopped','2 tbsp chia seeds','cinnamon, to taste'], instructions:['Divide the yoghurt among bowls.','Top with mixed berries and chopped almonds.','Sprinkle with chia seeds and cinnamon.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B006", name:'Berry Protein Smoothie', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['3 cups frozen berries','2 cups almond milk','1 cup water','1 cup coconut yoghurt','4 tbsp chia seeds'], instructions:['Add all ingredients to a blender.','Blend until smooth, adding more milk if needed.','Pour into cups and serve immediately.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B007", name:'Avocado and Tofu Smash', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 slices seeded bread','2 avocados','200g firm tofu, crumbled','2 tbsp pumpkin seeds','juice of 1 lemon','1 tbsp nutritional yeast','1/2 tsp paprika','1/2 tsp garlic powder','1/2 tsp onion powder','salt and pepper'], instructions:['Toast the bread until golden.','Mash the avocado with lemon juice, nutritional yeast, spices, salt and pepper.','Gently fold through the crumbled tofu.','Spread over the toast and top with pumpkin seeds.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B008", name:'Confetti Omelette', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['2 tbsp butter','8 eggs','2 egg whites','1/2 red capsicum, diced','1/2 green capsicum, diced','1/2 brown onion, diced','salt','1/2 cup shredded cheddar'], instructions:['Whisk the eggs and egg whites with a pinch of salt.','Sauté the capsicum and onion in butter until just softened.','Pour in the egg mixture and cook until edges set.','Sprinkle over the cheese, fold and cook until just set through.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B009", name:'Nutty Vanilla Protein Milkshake', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['3 cups almond milk','4 tbsp almond butter','ice','1 tsp cinnamon','pinch of salt','4 tbsp chia seeds'], instructions:['Add all ingredients to a blender.','Blend until smooth and creamy.','Pour into glasses and serve immediately.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B010", name:'One Minute Vanilla Berry Pudding', toddler:true, time:'~5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['1/2 cup almond flour','4 egg whites','1/2 tsp baking soda','pinch of salt','1 tsp cinnamon','2 cups mixed berries','1 cup coconut or Greek yoghurt'], instructions:['Whisk almond flour, egg whites, baking soda, salt and cinnamon in a microwave-safe bowl.','Microwave 60-90 seconds until just set.','Top with berries and a generous spoonful of yoghurt.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B011", name:'Cinnamon Apple Protein Bowl', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['2 apples, diced','2 cups coconut or Greek yoghurt','1 tsp cinnamon','2 tbsp chia seeds'], instructions:['Warm the diced apple briefly with a splash of water and cinnamon until just softened.','Spoon the yoghurt into bowls.','Top with the warm cinnamon apple and a sprinkle of chia seeds.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B012", name:'Asian Style Omelette', toddler:true, time:'10 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['1 tbsp coconut oil','1 cup string beans, chopped','1 cup mushrooms, sliced','2cm ginger, grated','2 cloves garlic, minced','8 eggs','1 tbsp fish sauce','1 tbsp tamari','1 tsp sesame oil','1/2 tsp curry powder','cucumber, coriander, spring onion and chilli flakes, to serve'], instructions:['Sauté the string beans, mushrooms, ginger and garlic in coconut oil until tender.','Whisk the eggs with fish sauce, tamari, sesame oil and curry powder.','Pour the egg mixture over the vegetables and cook until just set.','Fold and serve topped with cucumber, coriander, spring onion and chilli flakes.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B013", name:'Avocado Smash on Toast', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['4 slices seeded bread','2 avocados','juice of 1 lemon','100g feta or vegan cheese, crumbled','1 cup cherry tomatoes, halved','fresh basil','salt and pepper','1/4 tsp chilli flakes'], instructions:['Toast the bread until golden.','Mash the avocado with lemon juice, salt and pepper.','Spread over the toast and top with feta, tomatoes and basil.','Finish with a pinch of chilli flakes.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' },
-    { id:"B014", name:'Pan Fried Eggs and Asparagus', toddler:true, time:'5 min', source:'Health with Bec - 3 Week Body Reset (eBook)', ingredients:['8 eggs','1 bunch asparagus, trimmed','2 tbsp olive oil','salt and pepper','1/4 tsp chilli flakes'], instructions:['Cook the asparagus in olive oil for 3-4 minutes until just tender and lightly charred.','Push to one side and crack in the eggs, cooking to your liking.','Season with salt, pepper and chilli flakes, and serve immediately.'], servings:'4', link:'https://www.healthwithbecshop.com/', linkType:'account' }
-  ]
-};
+// Filled from the Google Sheet on load — no longer embedded in this file.
+let RECIPE_DB = { dinners: [], breakfasts: [] };
 
 function isExcluded(name) {
   const n = (name || '').toLowerCase();
@@ -654,105 +601,27 @@ const DAYS = ["Saturday","Sunday","Monday","Tuesday","Wednesday"];
 let currentPlan = { breakfasts: [], dinners: [] };
 let swapTarget = null;
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
-function showTab(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  const idx = ['plan','generate','shopping','recipes','history','settings'].indexOf(id);
-  document.querySelectorAll('nav button')[idx].classList.add('active');
-  if (id === 'settings') refreshApiStatus();
-  if (id === 'recipes') renderRecipeLibrary();
+// True when currentPlan holds unsaved edits. Guards against a background sync
+// overwriting suggestions you are still reviewing. Expires so an abandoned draft
+// doesn't block sync forever.
+let PLAN_DIRTY = false;
+let PLAN_DIRTY_AT = 0;
+const DIRTY_TTL_MS = 30 * 60 * 1000;
+
+function markDirty() { PLAN_DIRTY = true; PLAN_DIRTY_AT = Date.now(); }
+function clearDirty() { PLAN_DIRTY = false; PLAN_DIRTY_AT = 0; }
+function isDirty() {
+  if (!PLAN_DIRTY) return false;
+  if (Date.now() - PLAN_DIRTY_AT > DIRTY_TTL_MS) { clearDirty(); return false; }
+  return true;
 }
 
-// ── API KEY ───────────────────────────────────────────────────────────────────
-const HARDCODED_KEY = ''; // ← paste your sk-ant-... key here to work on ALL devices automatically
+// ── PLAN RULES ─────────────────────────────────────────────────
+// The server is *asked* to honour these; this enforces them client-side so a
+// stray model response can't put tagine, or the same dish twice, into your week.
+const DB_COUNT_PER_5  = 3;   // pulled straight from the recipe database
+const NEW_COUNT_PER_5 = 2;   // freshly invented
 
-function getApiKey() {
-  return localStorage.getItem('anthropic_api_key') || HARDCODED_KEY;
-}
-
-function saveApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key.startsWith('sk-ant-')) {
-    showToast('⚠️ Key should start with sk-ant-…');
-    return;
-  }
-  localStorage.setItem('anthropic_api_key', key);
-  document.getElementById('api-key-input').value = '';
-  refreshApiStatus();
-  showToast('✅ API key saved! Claude AI is now active.');
-}
-
-function clearApiKey() {
-  localStorage.removeItem('anthropic_api_key');
-  document.getElementById('api-key-input').value = '';
-  refreshApiStatus();
-  showToast('🗑 API key removed. Using fallback plans.');
-}
-
-function refreshApiStatus() {
-  const badge = document.getElementById('api-status-badge');
-  if (!badge) return;
-  const key = getApiKey();
-  if (key) {
-    badge.textContent = '✅ Active';
-    badge.style.background = 'var(--green-bg)';
-    badge.style.color = 'var(--green)';
-  } else {
-    badge.textContent = 'Not set';
-    badge.style.background = '#fdecea';
-    badge.style.color = 'var(--red)';
-  }
-}
-
-// ── PERSISTENCE ─────────────────────────────────────────────────────────────────────
-const PLAN_STORAGE_KEY = 'mealPlanner_currentPlan';
-const WEEK_LABEL_KEY = 'mealPlanner_weekLabel';
-const SHOPPING_CATEGORIES_KEY = 'mealPlanner_shoppingCategories';
-const SHOPPING_CHECKED_KEY = 'mealPlanner_shoppingChecked';
-
-function getCheckedSet() {
-  try { return new Set(JSON.parse(localStorage.getItem(SHOPPING_CHECKED_KEY) || '[]')); }
-  catch(e) { return new Set(); }
-}
-function saveCheckedSet(set) {
-  localStorage.setItem(SHOPPING_CHECKED_KEY, JSON.stringify([...set]));
-}
-
-// Run on page load
-window.addEventListener('DOMContentLoaded', () => {
-  refreshApiStatus();
-  loadCustomRecipes();
-  // Show API key prompt on first visit
-  if (!getApiKey()) {
-    setTimeout(() => showToast('⚙️ Add your API key in Settings to activate AI'), 1200);
-  }
-
-  // Restore last-confirmed plan (survives navigation/reload/closing the tab)
-  try {
-    const savedPlanRaw = localStorage.getItem(PLAN_STORAGE_KEY);
-    if (savedPlanRaw) {
-      const savedPlan = JSON.parse(savedPlanRaw);
-      currentPlan = savedPlan;
-      renderPlan(savedPlan, localStorage.getItem(WEEK_LABEL_KEY));
-    }
-  } catch(e) { console.error('Could not restore saved plan:', e); }
-
-  // Restore last-generated shopping list, including which items were checked
-  try {
-    const savedShoppingRaw = localStorage.getItem(SHOPPING_CATEGORIES_KEY);
-    if (savedShoppingRaw) {
-      renderShoppingList(JSON.parse(savedShoppingRaw));
-    }
-  } catch(e) { console.error('Could not restore saved shopping list:', e); }
-});
-
-// ── GENERATE ──────────────────────────────────────────────────────────────────
-const DB_COUNT_PER_5 = 3;   // pulled straight from the recipe database
-const NEW_COUNT_PER_5 = 2;  // freshly generated by Claude
-
-// Given N open slots, split proportionally to the 3-db / 2-new ratio (db-biased on rounding).
 function splitDbNew(nOpen) {
   if (nOpen <= 0) return { dbCount: 0, newCount: 0 };
   const dbCount = Math.min(nOpen, Math.max(1, Math.round(nOpen * DB_COUNT_PER_5 / 5)));
@@ -765,6 +634,301 @@ function pickFromDB(pool, excludeNames, count) {
   return shuffled.slice(0, count);
 }
 
+/**
+ * Post-filter a generated list of 5 meals:
+ *   1. drop anything excluded (tagine)
+ *   2. drop duplicates, within the list and against the other slot type
+ *   3. cap invented meals at the intended ratio, backfilling from the database
+ * Anything dropped is replaced with a database pick.
+ */
+function enforcePlanRules(meals, pool, day0Names) {
+  const used = new Set(day0Names || []);
+  const out = [];
+  let newCount = 0;
+  const allowedNew = splitDbNew(meals.length).newCount;
+
+  meals.forEach(m => {
+    const dup = used.has(m.name);
+    const banned = isExcluded(m.name);
+    const overNewQuota = m.isNew && newCount >= allowedNew;
+    if (!dup && !banned && !overNewQuota) {
+      if (m.isNew) newCount++;
+      used.add(m.name);
+      out.push(m);
+      return;
+    }
+    const [sub] = pickFromDB(pool, used, 1);
+    if (sub) {
+      used.add(sub.name);
+      out.push(Object.assign({}, sub, { day: m.day, note: banned ? 'swapped — excluded dish' : (dup ? 'swapped — duplicate' : 'swapped — from your database') }));
+    } else {
+      out.push(m); // nothing left to substitute with; keep rather than lose a slot
+    }
+  });
+  return out;
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  const idx = ['plan','generate','shopping','recipes','history','settings'].indexOf(id);
+  document.querySelectorAll('nav button')[idx].classList.add('active');
+  if (id === 'settings') refreshApiStatus();
+  if (id === 'recipes') renderRecipeLibrary();
+  if (id === 'history') renderHistory();
+}
+
+// ── CLOUD API LAYER ────────────────────────────────────────────
+// All shared state lives in the Google Sheet, reached through the Apps Script
+// Web App. localStorage is now only a token cache and an offline read cache.
+const API_URL = 'https://script.google.com/macros/s/AKfycbwWSpFh-giduy3aueaCvW9Qi1p3roi6G4WgCUqu-BDmS9Jik_Zg-8g-u3NDjhKWcFXoDQ/exec';
+const TOKEN_KEY = 'mp_token';
+const WHO_KEY   = 'mp_who';
+const CACHE_KEY = 'mp_cache';
+
+let TOKEN = localStorage.getItem(TOKEN_KEY) || '';
+let WHO   = localStorage.getItem(WHO_KEY) || '';
+let STATE = { week: '', plan: [], shopping: [], revisions: { plan: 0, shopping: 0, recipes: 0 } };
+let POLL_TIMER = null;
+
+async function api(action, payload) {
+  const body = Object.assign({ action: action, token: TOKEN }, payload || {});
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+  } catch (e) {
+    setOffline(true);
+    throw e;
+  }
+  setOffline(false);
+  const data = await res.json();
+  if (data.error === 'unauthorized') { signOut(true); throw new Error(data.message); }
+  if (data.error === 'throttled')    { showToast('🔒 ' + data.message); throw new Error(data.message); }
+  return data;
+}
+
+// Standing indicator — stays up for as long as the backend is unreachable,
+// rather than a toast that disappears and leaves stale data looking live.
+let OFFLINE = false;
+function setOffline(state) {
+  if (state === OFFLINE) return;
+  OFFLINE = state;
+  const bar = document.getElementById('offline-bar');
+  if (bar) bar.style.display = state ? 'block' : 'none';
+  if (!state) showToast('✅ Back online');
+}
+
+// ── AUTH ──────────────────────────────────────────────────────
+function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; }
+function hideAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
+
+async function doLogin() {
+  const pass = document.getElementById('auth-pass').value.trim();
+  const who  = document.getElementById('auth-who').value;
+  if (!pass) { showToast('Enter the family passphrase'); return; }
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = true; btn.textContent = 'Checking…';
+  try {
+    const r = await api('login', { passphrase: pass, who: who });
+    if (r.error) { showToast('❌ ' + r.message); return; }
+    TOKEN = r.token; WHO = r.who;
+    localStorage.setItem(TOKEN_KEY, TOKEN);
+    localStorage.setItem(WHO_KEY, WHO);
+    document.getElementById('auth-pass').value = '';
+    hideAuth();
+    await boot();
+  } catch (e) {
+    showToast('❌ ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Unlock';
+  }
+}
+
+function signOut(silent) {
+  TOKEN = ''; localStorage.removeItem(TOKEN_KEY);
+  if (!silent) showToast('Signed out');
+  showAuth();
+}
+
+function refreshApiStatus() {
+  const badge = document.getElementById('api-status-badge');
+  if (!badge) return;
+  const whoBox = document.getElementById('who-display');
+  if (whoBox) whoBox.value = WHO || '—';
+  if (TOKEN) {
+    badge.textContent = '✅ ' + (WHO || 'Signed in');
+    badge.style.background = 'var(--green-bg)';
+    badge.style.color = 'var(--green)';
+  } else {
+    badge.textContent = 'Locked';
+    badge.style.background = '#fdecea';
+    badge.style.color = 'var(--red)';
+  }
+}
+
+// ── SHAPE ADAPTERS ──────────────────────────────────────────────
+// The Sheet stores one row per meal. The UI expects { breakfasts:[5], dinners:[5] }.
+function rowsToPlan(rows) {
+  const plan = { breakfasts: [], dinners: [] };
+  DAYS.forEach(day => {
+    const b = rows.find(r => r.day === day && r.slot === 'Breakfast');
+    const d = rows.find(r => r.day === day && r.slot === 'Dinner');
+    if (b) plan.breakfasts.push(rowToMeal(b, day));
+    if (d) plan.dinners.push(rowToMeal(d, day));
+  });
+  return plan;
+}
+
+function rowToMeal(row, day) {
+  const lib = RECIPE_DB.dinners.concat(RECIPE_DB.breakfasts);
+  const hit = lib.find(r => r.name === row.recipe);
+  const base = hit || { name: row.recipe, ingredients: [], instructions: [], toddler: true, time: '', source: '' };
+  return Object.assign({}, base, { day: day, locked: !!row.locked });
+}
+
+function planToRows(plan) {
+  const rows = [];
+  DAYS.forEach((day, i) => {
+    if (plan.breakfasts[i]) rows.push({ day: day, slot: 'Breakfast', recipe: plan.breakfasts[i].name, locked: isKept('breakfast', i, plan.breakfasts[i]) });
+    if (plan.dinners[i])    rows.push({ day: day, slot: 'Dinner',    recipe: plan.dinners[i].name,    locked: isKept('dinner', i, plan.dinners[i]) });
+  });
+  return rows;
+}
+
+/** Keep-checkbox state if the Generate tab is showing, otherwise whatever was saved. */
+function isKept(type, idx, meal) {
+  const cb = document.querySelector(`.keep-check[data-type="${type}"][data-idx="${idx}"]`);
+  if (cb) return cb.checked;
+  return !!(meal && meal.locked);
+}
+
+// Sheet rows -> the [{name, items:[{name,qty}]}] shape renderShoppingList expects
+function rowsToCategories(rows) {
+  const order = [];
+  const byAisle = {};
+  rows.forEach(r => {
+    if (!byAisle[r.aisle]) { byAisle[r.aisle] = []; order.push(r.aisle); }
+    byAisle[r.aisle].push({ name: r.item, qty: r.qty, unit: '' });
+  });
+  return order.map(a => ({ name: a, items: byAisle[a] }));
+}
+
+// ── BOOT + SYNC ────────────────────────────────────────────────
+async function boot() {
+  if (!TOKEN) { showAuth(); return; }
+  hideAuth();
+  refreshApiStatus();
+  renderFromCache();
+  try {
+    const data = await api('bootstrap');
+    applyState(data);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    startPolling();
+  } catch (e) {
+    console.error('bootstrap failed', e);
+  }
+}
+
+function renderFromCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) applyState(JSON.parse(raw));
+  } catch (e) {}
+}
+
+function applyState(data) {
+  if (!data || !data.week) return;
+  STATE = data;
+  RECIPE_DB.dinners    = (data.recipes && data.recipes.dinner)    || [];
+  RECIPE_DB.breakfasts = (data.recipes && data.recipes.breakfast) || [];
+  RECIPE_DB.dinners.forEach(r => { r.instructions = r.steps || r.instructions || []; });
+  RECIPE_DB.breakfasts.forEach(r => { r.instructions = r.steps || r.instructions || []; });
+
+  // Never overwrite suggestions the user is still reviewing.
+  if (isDirty()) {
+    showToast('🔄 Someone else made a change — your draft is untouched');
+  } else {
+    currentPlan = rowsToPlan(data.plan || []);
+    if (currentPlan.dinners.length || currentPlan.breakfasts.length) {
+      renderPlan(currentPlan, 'Week of ' + data.week);
+    }
+  }
+  if ((data.shopping || []).length) renderShoppingList(rowsToCategories(data.shopping));
+  renderRecipeLibrary();
+  showSyncNote(data.revisions);
+}
+
+function showSyncNote(rev) {
+  const el = document.getElementById('sync-note');
+  if (!el || !rev || !rev.updatedBy) return;
+  if (rev.updatedBy === WHO) { el.style.display = 'none'; return; }
+  el.textContent = '🔄 Last updated by ' + rev.updatedBy;
+  el.style.display = 'block';
+}
+
+function startPolling() {
+  if (POLL_TIMER) clearInterval(POLL_TIMER);
+  POLL_TIMER = setInterval(checkForChanges, 20000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForChanges(); });
+}
+
+async function checkForChanges() {
+  if (!TOKEN || document.hidden) return;
+  try {
+    const r = await api('getRevisions');
+    const mine = STATE.revisions || {};
+    const theirs = r.revisions || {};
+    if (theirs.plan > (mine.plan||0) || theirs.shopping > (mine.shopping||0) || theirs.recipes > (mine.recipes||0)) {
+      const data = await api('bootstrap', { fresh: true });
+      applyState(data);
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      showToast('🔄 Updated by ' + (theirs.updatedBy || 'someone else'));
+    }
+  } catch (e) {}
+}
+
+// ── HISTORY ───────────────────────────────────────────────────
+async function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!el || !TOKEN) return;
+  try {
+    const r = await api('getHistory', { limit: 8 });
+    const weeks = r.weeks || [];
+    if (!weeks.length) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No past weeks yet — they appear here once you confirm your first plan.</p>';
+      return;
+    }
+    el.innerHTML = weeks.map(w => `
+      <div style="margin-bottom:14px;">
+        <div class="shop-category">Week of ${w.week}</div>
+        ${w.meals.map(m => `
+          <div class="history-item">
+            <div class="hist-date">${(m.day || '').slice(0,3)}</div>
+            <div class="hist-info">
+              <div class="hist-name">${m.recipe}</div>
+              <div class="hist-meta">${m.slot}</div>
+            </div>
+            <div class="stars">${m.rating || ''}</div>
+          </div>`).join('')}
+      </div>`).join('');
+  } catch (e) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Could not load history.</p>';
+  }
+}
+
+function getCheckedSet() {
+  return new Set((STATE.shopping || []).filter(r => r.checked).map(r => r.aisle + '::' + r.item));
+}
+
+window.addEventListener('DOMContentLoaded', () => { boot(); });
+
+// ── GENERATE ─────────────────────────────────────────────────
 function getOpenIndices(type, regenerateOnly) {
   // Returns which of the 5 day-slots need (re)generating.
   if (!regenerateOnly) return [0,1,2,3,4];
@@ -776,143 +940,68 @@ function getOpenIndices(type, regenerateOnly) {
   return open;
 }
 
-async function generateMeals(regenerateOnly = false) {
-  document.getElementById('gen-loading').classList.add('active');
-  document.getElementById('gen-results').style.display = 'none';
+async function generateMeals(regenerateOnly) {
+  if (!TOKEN) { showAuth(); return; }
+  const loading = document.getElementById('gen-loading');
+  const results = document.getElementById('gen-results');
+  if (loading) loading.classList.add('active');
+  if (results) results.style.display = 'none';
 
-  const openBreakfastIdx = getOpenIndices('breakfast', regenerateOnly);
-  const openDinnerIdx = getOpenIndices('dinner', regenerateOnly);
-
-  if (regenerateOnly && openBreakfastIdx.length === 0 && openDinnerIdx.length === 0) {
-    document.getElementById('gen-loading').classList.remove('active');
-    document.getElementById('gen-results').style.display = 'block';
-    showToast('Everything is checked as kept — nothing to regenerate 👍');
-    return;
+  const keep = [];
+  if (regenerateOnly) {
+    const openB = getOpenIndices('breakfast', true);
+    const openD = getOpenIndices('dinner', true);
+    DAYS.forEach((day, i) => {
+      if (!openB.includes(i) && currentPlan.breakfasts[i]) keep.push({ day: day, slot: 'Breakfast', recipe: currentPlan.breakfasts[i].name });
+      if (!openD.includes(i) && currentPlan.dinners[i])    keep.push({ day: day, slot: 'Dinner',    recipe: currentPlan.dinners[i].name });
+    });
   }
 
-  const keptNames = new Set([
-    ...currentPlan.breakfasts.filter((_, i) => !openBreakfastIdx.includes(i)).map(b => b.name),
-    ...currentPlan.dinners.filter((_, i) => !openDinnerIdx.includes(i)).map(d => d.name)
-  ]);
+  try {
+    const out = await api('generate', { week: STATE.week, keep: keep });
+    const meals = out.meals || [];
+    const plan = { breakfasts: [], dinners: [] };
+    DAYS.forEach(day => {
+      const b = meals.find(m => m.day === day && m.slot === 'Breakfast');
+      const d = meals.find(m => m.day === day && m.slot === 'Dinner');
+      if (b) plan.breakfasts.push(mealToRecipe(b, day));
+      if (d) plan.dinners.push(mealToRecipe(d, day));
+    });
 
-  const { dbCount: bDbCount, newCount: bNewCount } = splitDbNew(openBreakfastIdx.length);
-  const { dbCount: dDbCount, newCount: dNewCount } = splitDbNew(openDinnerIdx.length);
+    // Enforce the rules the prompt only asks for: no exclusions, no duplicates,
+    // and the intended database/new ratio. Dinners first so they claim the pool.
+    plan.dinners    = enforcePlanRules(plan.dinners, RECIPE_DB.dinners, []);
+    plan.breakfasts = enforcePlanRules(plan.breakfasts, RECIPE_DB.breakfasts,
+                                       plan.dinners.map(m => m.name));
 
-  const dbBreakfasts = pickFromDB(RECIPE_DB.breakfasts, keptNames, bDbCount);
-  const dbDinners = pickFromDB(RECIPE_DB.dinners, keptNames, dDbCount);
-
-  const historyContext = `
-Recent meal history (avoid repeating within 3 weeks):
-- Baked Lemon Herb Chicken (Dinner, 5★)
-- Shakshuka (Dinner, 5★)
-- Banana Oat Pancakes (Breakfast, 5★)
-- Lentil & Vegetable Soup (Dinner, 4★, add more spice next time)
-- Baked White Fish with Herbs (Dinner, 4★, toddler not keen on fish yet)
-
-Meals already locked in for this week (don't repeat these, and don't repeat the database list above):
-${[...keptNames].join(', ') || 'none yet'}
-`;
-
-  let newBreakfasts = [];
-  let newDinners = [];
-
-  if (bNewCount > 0 || dNewCount > 0) {
-    const prompt = `You are a family meal planner assistant, generating ONLY brand-new recipe ideas (not pulled from an existing database — those are handled separately).
-
-Family:
-- Location: Saudi Arabia (no pork, use locally available ingredients)
-- Diet: Mediterranean, whole foods, minimal processed food
-- Family: 2 adults + 18-month toddler
-- Portions: enough for next-day lunch leftovers (so 3 adult + 1 toddler per meal)
-- Sources to draw on: Baby Food Bible, Blue Zones, EatingWell.com, simplehomeedit.com
-
-${historyContext}
-
-HARD RULE: Never suggest any Tagine dish (Chicken & Chickpea Tagine, Lamb Tagine, or any tagine-style dish) — this family does not like Tagine, full stop.
-
-Please generate exactly:
-- ${bNewCount} NEW breakfast recipe(s) (not already used this week)
-- ${dNewCount} NEW dinner recipe(s) (balanced proteins, toddler-friendly or easily adaptable)
-
-Respond ONLY in this exact JSON format with no other text:
-{
-  "newBreakfasts": [
-    ${bNewCount > 0 ? '{"name": "Recipe Name", "source": "Source", "note": "short tip"}' : ''}
-  ],
-  "newDinners": [
-    ${dNewCount > 0 ? '{"name": "Recipe Name", "cuisine": "Cuisine", "protein": "Protein", "source": "Source", "note": "short tip"}' : ''}
-  ]
-}`;
-
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      document.getElementById('gen-loading').classList.remove('active');
-      showToast('⚙️ Add your API key in Settings first');
-      showTab('settings');
-      return;
-    }
-
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      let text = data.content.map(i => i.text || "").join("");
-      text = text.replace(/```json|```/g, "").trim();
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No JSON found in response: ' + text.substring(0, 200));
-      const result = JSON.parse(jsonMatch[0]);
-      newBreakfasts = (result.newBreakfasts || []).filter(r => !isExcluded(r.name)).slice(0, bNewCount);
-      newDinners = (result.newDinners || []).filter(r => !isExcluded(r.name)).slice(0, dNewCount);
-    } catch(e) {
-      console.error('Generate error:', e.message);
-      showToast('⚠️ AI error, filling with database picks instead: ' + e.message.substring(0, 60));
-      // Fall back to extra database picks instead of AI-generated ones
-      const extraB = pickFromDB(RECIPE_DB.breakfasts, new Set([...keptNames, ...dbBreakfasts.map(b=>b.name)]), bNewCount);
-      const extraD = pickFromDB(RECIPE_DB.dinners, new Set([...keptNames, ...dbDinners.map(d=>d.name)]), dNewCount);
-      newBreakfasts = extraB.map(b => ({ name: b.name, source: b.source, note: '' }));
-      newDinners = extraD.map(d => ({ name: d.name, cuisine: '', protein: d.protein, source: d.source, note: '' }));
-    }
+    currentPlan = plan;
+    markDirty();
+    renderSuggestions(currentPlan);
+    if (results) results.style.display = 'block';
+  } catch (e) {
+    showToast('❌ Could not generate: ' + e.message);
+  } finally {
+    if (loading) loading.classList.remove('active');
   }
+}
 
-  // Merge: kept slots stay as-is, open slots get filled with db picks first, then AI-new picks
-  const bFillQueue = [
-    ...dbBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.time ? `${b.time} prep` : '', isNew: false, ingredients: b.ingredients || [], instructions: b.instructions || [], link: b.link || '' })),
-    ...newBreakfasts.map(b => ({ name: b.name, source: b.source, note: b.note || '', isNew: true, ingredients: [], instructions: [] }))
-  ];
-  const dFillQueue = [
-    ...dbDinners.map(d => ({ name: d.name, cuisine: '', protein: d.protein, source: d.source, note: d.time ? `${d.time} prep` : '', isNew: false, ingredients: d.ingredients || [], instructions: d.instructions || [], link: d.link || '' })),
-    ...newDinners.map(d => ({ name: d.name, cuisine: d.cuisine || '', protein: d.protein || '', source: d.source, note: d.note || '', isNew: true, ingredients: [], instructions: [] }))
-  ];
-
-  const newBreakfastPlan = [...currentPlan.breakfasts];
-  const newDinnerPlan = [...currentPlan.dinners];
-  openBreakfastIdx.forEach((idx, k) => {
-    const fill = bFillQueue[k] || { name: 'TBD', source: '', note: '', isNew: false };
-    newBreakfastPlan[idx] = { day: DAYS[idx], ...fill };
-  });
-  openDinnerIdx.forEach((idx, k) => {
-    const fill = dFillQueue[k] || { name: 'TBD', source: '', note: '', isNew: false };
-    newDinnerPlan[idx] = { day: DAYS[idx], ...fill };
-  });
-
-  currentPlan = { breakfasts: newBreakfastPlan, dinners: newDinnerPlan };
-  renderSuggestions(currentPlan);
-
-  document.getElementById('gen-loading').classList.remove('active');
-  document.getElementById('gen-results').style.display = 'block';
+function mealToRecipe(m, day) {
+  const lib = RECIPE_DB.dinners.concat(RECIPE_DB.breakfasts);
+  const hit = lib.find(r => r.name === m.recipe);
+  if (hit && !m.isNew) return Object.assign({}, hit, { day: day, note: m.note || '' });
+  return {
+    id: 'NEW' + Math.random().toString(36).slice(2, 7),
+    day: day,
+    name: m.recipe,
+    ingredients: m.ingredients || [],
+    instructions: m.steps || [],
+    toddler: true,
+    toddlerNote: m.toddler || '',
+    time: m.time || '30 min',
+    source: 'New this week',
+    isNew: true,
+    note: m.note || ''
+  };
 }
 
 function renderSuggestions(plan) {
@@ -921,7 +1010,7 @@ function renderSuggestions(plan) {
 
   bDiv.innerHTML = plan.breakfasts.map((b, i) => `
     <div class="meal-row">
-      <input type="checkbox" class="keep-check" data-type="breakfast" data-idx="${i}" title="Keep this meal" style="margin-right:8px;width:18px;height:18px;flex-shrink:0;">
+      <input type="checkbox" class="keep-check" data-type="breakfast" data-idx="${i}" ${b.locked ? 'checked' : ''} title="Keep this meal" style="margin-right:8px;width:18px;height:18px;flex-shrink:0;">
       <div class="meal-day">${(b.day||DAYS[i]).slice(0,3)}</div>
       <div class="meal-info">
         <div class="meal-name">${b.name} ${b.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : '<span class="badge" style="font-size:0.6rem;padding:2px 6px;">DB</span>'}</div>
@@ -936,7 +1025,7 @@ function renderSuggestions(plan) {
 
   dDiv.innerHTML = plan.dinners.map((d, i) => `
     <div class="meal-row">
-      <input type="checkbox" class="keep-check" data-type="dinner" data-idx="${i}" title="Keep this meal" style="margin-right:8px;width:18px;height:18px;flex-shrink:0;">
+      <input type="checkbox" class="keep-check" data-type="dinner" data-idx="${i}" ${d.locked ? 'checked' : ''} title="Keep this meal" style="margin-right:8px;width:18px;height:18px;flex-shrink:0;">
       <div class="meal-day">${(d.day||DAYS[i]).slice(0,3)}</div>
       <div class="meal-info">
         <div class="meal-name">${d.name} ${d.isNew ? '<span class="badge gold" style="font-size:0.6rem;padding:2px 6px;">New</span>' : '<span class="badge" style="font-size:0.6rem;padding:2px 6px;">DB</span>'}</div>
@@ -950,22 +1039,44 @@ function renderSuggestions(plan) {
   `).join('');
 }
 
-function acceptPlan() {
-  renderPlan(currentPlan);
-  generateShopping();
+async function acceptPlan() {
+  await savePlanToCloud();
+  renderPlan(currentPlan, 'Week of ' + STATE.week);
   showTab('plan');
-  showToast('✅ Plan saved! Shopping list ready.');
+  await generateShopping();
+  showToast('✅ Plan saved for everyone');
+}
+
+async function savePlanToCloud() {
+  try {
+    const res = await api('savePlan', {
+      week: STATE.week,
+      meals: planToRows(currentPlan),
+      baseRev: (STATE.revisions || {}).plan
+    });
+    if (res.error === 'conflict') {
+      if (confirm(res.message + '\n\nOverwrite with your version?')) {
+        await api('savePlan', { week: STATE.week, meals: planToRows(currentPlan) });
+      } else {
+        const data = await api('bootstrap', { fresh: true });
+        applyState(data);
+        return;
+      }
+    }
+    if (res.planRev) STATE.revisions.plan = res.planRev;
+    PLAN_DIRTY = false;
+  } catch (e) {
+    showToast('❌ Could not save: ' + e.message);
+  }
 }
 
 function renderPlan(plan, weekLabelOverride) {
   const label = weekLabelOverride || `Week of ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long'})}`;
   document.getElementById('week-label').textContent = label;
-  localStorage.setItem(PLAN_STORAGE_KEY, JSON.stringify(plan));
-  localStorage.setItem(WEEK_LABEL_KEY, label);
 
   document.getElementById('breakfast-list').innerHTML = plan.breakfasts.map(b => `
     <div class="meal-row">
-      <div class="meal-day">${b.day.slice(0,3)}</div>
+      <div class="meal-day">${(b.day||'').slice(0,3)}</div>
       <div class="meal-info">
         <div class="meal-name">${b.name}</div>
         <div class="meal-meta">${b.source}</div>
@@ -978,7 +1089,7 @@ function renderPlan(plan, weekLabelOverride) {
 
   document.getElementById('dinner-list').innerHTML = plan.dinners.map(d => `
     <div class="meal-row">
-      <div class="meal-day">${d.day.slice(0,3)}</div>
+      <div class="meal-day">${(d.day||'').slice(0,3)}</div>
       <div class="meal-info">
         <div class="meal-name">${d.name}</div>
         <div class="meal-meta">${d.cuisine || ''} ${d.cuisine ? '· ' : ''}${d.protein || ''} · ${d.source}</div>
@@ -990,18 +1101,17 @@ function renderPlan(plan, weekLabelOverride) {
   `).join('');
 }
 
-function confirmPlan() {
+async function confirmPlan() {
   if (!currentPlan.dinners.length) { showToast('Generate a plan first ✨'); return; }
-  generateShopping();
+  await savePlanToCloud();
   showTab('shopping');
+  await generateShopping();
 }
 
-// ── SHOPPING LIST ─────────────────────────────────────────────────────────────
+// ── SHOPPING LIST ──────────────────────────────────────────────
 function exportShoppingToKeep() {
-  const raw = localStorage.getItem(SHOPPING_CATEGORIES_KEY);
-  if (!raw) { showToast('Generate a shopping list first'); return; }
-  let categories;
-  try { categories = JSON.parse(raw); } catch(e) { showToast('No shopping list to export yet'); return; }
+  const categories = rowsToCategories(STATE.shopping || []);
+  if (!categories.length) { showToast('Generate a shopping list first'); return; }
 
   const lines = ['Shopping List'];
   categories.forEach(cat => {
@@ -1033,106 +1143,49 @@ function exportShoppingToKeep() {
 }
 
 async function generateShopping() {
-  if (!currentPlan.dinners.length) return;
-
-  // Look up REAL ingredients for any meal that matches our recipe database,
-  // rather than letting the AI guess ingredients (and proteins!) from the name alone.
-  const allMeals = [...currentPlan.breakfasts, ...currentPlan.dinners];
-  const dbLookup = new Map([...RECIPE_DB.breakfasts, ...RECIPE_DB.dinners].map(r => [r.name, r]));
-
-  const knownLines = [];
-  const unknownNames = [];
-  allMeals.forEach(m => {
-    const match = dbLookup.get(m.name);
-    if (match && match.ingredients && match.ingredients.length) {
-      knownLines.push(`- ${m.name} (${match.protein || 'see ingredients'}): ${match.ingredients.join(', ')}`);
-    } else {
-      unknownNames.push(m.name);
-    }
-  });
-
-  const prompt = `Generate a shopping list for a family of 2 adults + 1 toddler (18 months), with enough for next-day lunch leftovers (so shop for roughly 3 adult + 1 toddler portions per meal).
-
-KNOWN RECIPES — use these EXACT ingredients and proteins, just convert to realistic shopping quantities. Do NOT substitute a different protein or invent ingredients not listed here:
-${knownLines.join('\n') || 'none'}
-
-${unknownNames.length ? `RECIPES WITHOUT KNOWN INGREDIENTS — infer sensible ingredients for these based on the name and Mediterranean/whole-food style:\n${unknownNames.map(n => '- ' + n).join('\n')}` : ''}
-
-Location: Saudi Arabia — use ingredients available in KSA supermarkets (Tamimi, Danube, Panda).
-Diet: Mediterranean, whole foods, no pork.
-
-Merge and de-duplicate ingredients that repeat across meals (e.g. combine garlic needed for 3 recipes into one line). Group by supermarket section. Give realistic quantities.
-
-Respond ONLY in this JSON format:
-{
-  "categories": [
-    {
-      "name": "🥦 Produce",
-      "items": [
-        {"name": "Tomatoes", "qty": "6", "unit": "large"},
-        {"name": "Spinach", "qty": "1", "unit": "bag"}
-      ]
-    }
-  ]
-}`;
-
+  const el = document.getElementById('shopping-content');
+  if (el) el.innerHTML = '<p style="text-align:center;padding:24px;">Building your list…</p>';
   try {
-    const apiKey = getApiKey();
-    if (!apiKey) { renderShoppingList(fallbackShoppingList()); return; }
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4000,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    let text = data.content.map(i => i.text || "").join("");
-    text = text.replace(/```json|```/g, "").trim();
-    const firstBrace = text.indexOf("{");
-    const lastBrace = text.lastIndexOf("}");
-    if (firstBrace !== -1 && lastBrace !== -1) text = text.slice(firstBrace, lastBrace + 1);
-    const list = JSON.parse(text);
-    renderShoppingList(list.categories);
-  } catch(e) {
-    console.error('Shopping list generation failed:', e);
-    showToast('⚠️ Shopping list failed: ' + (e.message || 'unknown error') + ' — showing placeholder.');
+    const res = await api('generateShopping', { week: STATE.week });
+    if (res.error) { showToast(res.message || 'Confirm a plan first'); renderShoppingList(fallbackShoppingList()); return; }
+    const data = await api('bootstrap', { fresh: true });
+    applyState(data);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch (e) {
     renderShoppingList(fallbackShoppingList());
   }
 }
 
 function fallbackShoppingList() {
   return [
-    { name:"🥦 Produce", items:[{name:"Tomatoes",qty:"6",unit:"large"},{name:"Spinach",qty:"1",unit:"bag"},{name:"Zucchini",qty:"3",unit:"medium"},{name:"Avocado",qty:"3",unit:""},{name:"Banana",qty:"6",unit:""},{name:"Lemon",qty:"4",unit:""}]},
-    { name:"🥩 Meat & Fish", items:[{name:"Chicken thighs",qty:"700",unit:"g"},{name:"Minced beef",qty:"400",unit:"g"},{name:"Eggs",qty:"12",unit:""}]},
-    { name:"🧀 Dairy", items:[{name:"Greek yoghurt",qty:"500",unit:"g"},{name:"Feta",qty:"200",unit:"g"},{name:"Halloumi",qty:"250",unit:"g"}]},
-    { name:"🌾 Pantry", items:[{name:"Oats",qty:"500",unit:"g"},{name:"Chickpeas (tin)",qty:"2",unit:"tins"},{name:"Red lentils",qty:"400",unit:"g"},{name:"Olive oil",qty:"1",unit:"bottle"},{name:"Couscous",qty:"300",unit:"g"}]},
-    { name:"🫙 Spices & Pantry", items:[{name:"Cumin",qty:"1",unit:"jar"},{name:"Paprika",qty:"1",unit:"jar"},{name:"Cinnamon",qty:"1",unit:"jar"},{name:"Garlic",qty:"1",unit:"bulb"}]},
+    { name:"🥦 Produce", items:[{name:"Tomatoes",qty:"6",unit:"large"},{name:"Spinach",qty:"1",unit:"bag"},{name:"Zucchini",qty:"3",unit:"medium"},{name:"Avocado",qty:"3",unit:""},{name:"Banana",qty:"6",unit:""},{name:"Lemon",qty:"4",unit:""},{name:"Garlic",qty:"1",unit:"bulb"}]},
+    { name:"🥩 Meat & Seafood", items:[{name:"Chicken thighs",qty:"700",unit:"g"},{name:"Minced beef",qty:"400",unit:"g"}]},
+    { name:"🥛 Dairy & Eggs", items:[{name:"Greek yoghurt",qty:"500",unit:"g"},{name:"Feta",qty:"200",unit:"g"},{name:"Halloumi",qty:"250",unit:"g"},{name:"Eggs",qty:"12",unit:""}]},
+    { name:"🌾 Grains, Bread & Pasta", items:[{name:"Oats",qty:"500",unit:"g"},{name:"Couscous",qty:"300",unit:"g"}]},
+    { name:"🫙 Canned & Jarred Goods", items:[{name:"Chickpeas (tin)",qty:"2",unit:"tins"},{name:"Red lentils",qty:"400",unit:"g"}]},
+    { name:"🧴 Sauces, Oils & Condiments", items:[{name:"Olive oil",qty:"1",unit:"bottle"}]},
+    { name:"🧂 Baking & Spices", items:[{name:"Cumin",qty:"1",unit:"jar"},{name:"Paprika",qty:"1",unit:"jar"},{name:"Cinnamon",qty:"1",unit:"jar"}]},
   ];
 }
 
+// Row identity is held here rather than encoded into an onclick string, so item
+// names containing quotes or "::" can't corrupt the lookup.
+let SHOP_INDEX = {};
+
 function renderShoppingList(categories) {
-  localStorage.setItem(SHOPPING_CATEGORIES_KEY, JSON.stringify(categories));
   const checkedSet = getCheckedSet();
+  SHOP_INDEX = {};
   let html = '';
   let id = 0;
   categories.forEach(cat => {
     html += `<div class="shop-category">${cat.name}</div>`;
     cat.items.forEach(item => {
       const sid = 'si' + (id++);
-      const key = (cat.name + '::' + item.name).replace(/'/g, "\\'");
+      SHOP_INDEX[sid] = { aisle: cat.name, item: item.name };
       const isChecked = checkedSet.has(cat.name + '::' + item.name);
       html += `
         <div class="shop-item ${isChecked ? 'checked' : ''}" id="row-${sid}">
-          <input type="checkbox" id="${sid}" ${isChecked ? 'checked' : ''} onchange="toggleShop('${sid}','${key}')">
+          <input type="checkbox" id="${sid}" ${isChecked ? 'checked' : ''} onchange="toggleShop('${sid}')">
           <label for="${sid}">${item.name}</label>
           <div class="shop-qty">${item.qty} ${item.unit || ''}</div>
         </div>`;
@@ -1141,21 +1194,54 @@ function renderShoppingList(categories) {
   document.getElementById('shopping-content').innerHTML = html;
 }
 
-function toggleShop(id, key) {
+async function toggleShop(id) {
   const row = document.getElementById('row-' + id);
-  const cb = document.getElementById(id);
+  const cb  = document.getElementById(id);
+  const ref = SHOP_INDEX[id];
+  if (!ref) return;
   row.classList.toggle('checked', cb.checked);
-  const checkedSet = getCheckedSet();
-  if (cb.checked) checkedSet.add(key); else checkedSet.delete(key);
-  saveCheckedSet(checkedSet);
+  try {
+    const res = await api('toggleItem', { week: STATE.week, aisle: ref.aisle, item: ref.item, checked: cb.checked });
+    const hit = (STATE.shopping || []).find(r => r.item === ref.item && r.aisle === ref.aisle);
+    if (hit) hit.checked = cb.checked;
+    if (res.shoppingRev) STATE.revisions.shopping = res.shoppingRev;
+  } catch (e) {
+    cb.checked = !cb.checked;
+    row.classList.toggle('checked', cb.checked);
+    showToast('❌ Could not save that tick');
+  }
 }
 
-// ── SWAP ──────────────────────────────────────────────────────────────────────
+async function addShoppingItem() {
+  const nameEl  = document.getElementById('add-item-name');
+  const qtyEl   = document.getElementById('add-item-qty');
+  const aisleEl = document.getElementById('add-item-aisle');
+  const name = nameEl.value.trim();
+  if (!name) { showToast('Type an item first'); return; }
+  try {
+    const res = await api('addItem', {
+      week: STATE.week,
+      item: name,
+      qty: qtyEl.value.trim(),
+      aisle: aisleEl.value
+    });
+    if (res.shoppingRev) STATE.revisions.shopping = res.shoppingRev;
+    const data = await api('bootstrap', { fresh: true });
+    applyState(data);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    nameEl.value = ''; qtyEl.value = '';
+    showToast('➕ Added to everyone\'s list');
+  } catch (e) {
+    showToast('❌ Could not add: ' + e.message);
+  }
+}
+
+// ── SWAP ──────────────────────────────────────────────────────
 function swapMeal(type, idx) {
   swapTarget = { type, idx };
   const pool = type === 'dinner' ? RECIPE_DB.dinners : RECIPE_DB.breakfasts;
   const current = type === 'dinner' ? currentPlan.dinners[idx].name : currentPlan.breakfasts[idx].name;
-  const filteredPool = pool.filter(r => r.name !== current);
+  const filteredPool = pool.filter(r => r.name !== current && !isExcluded(r.name));
 
   document.getElementById('swap-options').innerHTML = filteredPool
     .map((r, i) => `
@@ -1191,6 +1277,7 @@ function doSwap(recipe) {
       isNew: false
     };
   }
+  markDirty();
   renderSuggestions(currentPlan);
   closeSwap();
   showToast('✅ Meal swapped!');
@@ -1201,45 +1288,35 @@ function closeSwap() {
   swapTarget = null;
 }
 
-// ── ADD RECIPE ────────────────────────────────────────────────────────────────
-const CUSTOM_RECIPES_KEY = 'mealPlanner_customRecipes';
-
-function loadCustomRecipes() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(CUSTOM_RECIPES_KEY) || '[]');
-    saved.forEach(({ type, recipe }) => {
-      if (type === 'Dinner') RECIPE_DB.dinners.push(recipe);
-      else RECIPE_DB.breakfasts.push(recipe);
-    });
-  } catch(e) { console.error('Could not restore custom recipes:', e); }
-}
-
-function addInstagramRecipe() {
+// ── ADD RECIPE ───────────────────────────────────────────────
+async function addInstagramRecipe() {
   const name = document.getElementById('ig-name').value.trim();
   const ingredients = document.getElementById('ig-ingredients').value.trim();
   if (!name || !ingredients) { showToast('Please fill in name and ingredients'); return; }
-
   const type = document.getElementById('ig-type').value;
   const toddler = document.getElementById('ig-toddler').value;
-  const newRecipe = { id: 'IG' + Date.now(), name, toddler: toddler === 'Yes', time: '30 min', source: 'Instagram', ingredients, protein: '' };
-
-  if (type === 'Dinner') RECIPE_DB.dinners.push(newRecipe);
-  else RECIPE_DB.breakfasts.push(newRecipe);
-
-  // Persist so it survives a reload — previously this only lived in memory and vanished on refresh
   try {
-    const saved = JSON.parse(localStorage.getItem(CUSTOM_RECIPES_KEY) || '[]');
-    saved.push({ type, recipe: newRecipe });
-    localStorage.setItem(CUSTOM_RECIPES_KEY, JSON.stringify(saved));
-  } catch(e) { console.error('Could not save custom recipe:', e); }
-
-  document.getElementById('ig-name').value = '';
-  document.getElementById('ig-ingredients').value = '';
-  showToast(`✅ "${name}" saved to your recipe library!`);
-  renderRecipeLibrary();
+    await api('addRecipe', {
+      name: name,
+      type: type,
+      source: 'Instagram',
+      ingredients: ingredients.split(/[;\n]/).map(s => s.trim()).filter(Boolean),
+      toddler: toddler,
+      time: '30 min',
+      servings: 4
+    });
+    const data = await api('bootstrap', { fresh: true });
+    applyState(data);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    document.getElementById('ig-name').value = '';
+    document.getElementById('ig-ingredients').value = '';
+    showToast('💾 Saved to the family recipe database');
+  } catch (e) {
+    showToast('❌ Could not save: ' + e.message);
+  }
 }
 
-// ── RECIPE LIBRARY (browse what's actually in the database) ─────────────
+// ── RECIPE LIBRARY ─────────────────────────────────────────────
 function renderRecipeLibrary() {
   const searchEl = document.getElementById('recipe-search');
   const filterEl = document.getElementById('recipe-filter');
@@ -1268,14 +1345,13 @@ function renderRecipeLibrary() {
         <div class="meal-meta">${r.protein ? r.protein + ' · ' : ''}${r.time || ''} ${r.source ? '· ' + r.source : ''}${r.servings ? ' · serves ' + r.servings : ''}</div>
         <div class="meal-meta" style="margin-top:4px;">${(r.ingredients && r.ingredients.length) ? r.ingredients.join('; ') : '⚠️ No ingredient list saved for this one yet'}</div>
         ${(r.instructions && r.instructions.length) ? `<details style="margin-top:4px;"><summary style="font-size:0.72rem;color:var(--green);cursor:pointer;font-weight:600;">Instructions (Claude's own, not copied from source)</summary><ol style="margin:6px 0 0 18px;font-size:0.78rem;color:var(--ink);">${r.instructions.map(s => `<li style="margin-bottom:3px;">${s}</li>`).join('')}</ol></details>` : ''}
-        ${r.link ? `<a href="${r.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;display:inline-block;margin-top:4px;">View Original →</a><span style="font-size:0.68rem;color:var(--muted);">${linkNote[r.linkType] || ''}</span>` : ''}
+        ${r.link ? `<a href="${r.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;display:inline-block;margin-top:4px;">View Original →</a><span style="font-size:0.68rem;color:var(--muted);">${linkNote[r.linkStatus] || ''}</span>` : ''}
       </div>
     </div>
   `).join('') || '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No recipes match your search.</p>';
 }
 
-
-// ── TOAST ─────────────────────────────────────────────────────────────────────
+// ── TOAST ─────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
