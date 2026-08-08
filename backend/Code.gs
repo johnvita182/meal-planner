@@ -136,6 +136,33 @@ function clearFailures() {
   CacheService.getScriptCache().remove('login_fails');
 }
 
+/**
+ * One-time (and safely repeatable) tidy-up: force the Week Start columns to
+ * plain text and rewrite any values Sheets had already coerced into dates.
+ * Run from the editor if the Sheet ever shows long-form timestamps again.
+ */
+function normaliseWeekColumns() {
+  [TAB.plan, TAB.shopping].forEach(function (name) {
+    var sheet = tab(name);
+    var last = sheet.getLastRow();
+    if (last < 2) return;
+    var range = sheet.getRange(2, 1, last - 1, 1);
+    var vals = range.getValues().map(function (r) { return [asWeek(r[0])]; });
+    range.setNumberFormat('@');   // plain text, stops future coercion
+    range.setValues(vals);
+  });
+  var meta = tab(TAB.meta);
+  var rows = meta.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === 'current_week' || String(rows[i][0]) === 'sentinel_week') {
+      var cell = meta.getRange(i + 1, 2);
+      cell.setNumberFormat('@');
+      cell.setValue(asWeek(rows[i][1]));
+    }
+  }
+  Logger.log('Week columns normalised to YYYY-MM-DD plain text.');
+}
+
 /** Run from the editor to lift a throttle immediately. */
 function resetThrottle() {
   clearFailures();
@@ -186,7 +213,10 @@ function metaSet(updates) {
   for (var i = 1; i < rows.length; i++) {
     var key = String(rows[i][0]);
     if (updates.hasOwnProperty(key)) {
-      sheet.getRange(i + 1, 2).setValue(updates[key]);
+      var cell = sheet.getRange(i + 1, 2);
+      // Week keys must stay literal text, or Sheets turns them into Date cells.
+      if (key === 'current_week' || key === 'sentinel_week') cell.setNumberFormat('@');
+      cell.setValue(updates[key]);
     }
   }
 }
@@ -232,8 +262,24 @@ function weekStart(date) {
   return Utilities.formatDate(sat, TZ, 'yyyy-MM-dd');
 }
 
+/**
+ * Normalise a Week Start value to plain YYYY-MM-DD.
+ *
+ * Sheets coerces a written string like "2026-08-08" into a real date cell, so
+ * reading it back gives a Date object. String(date) then yields
+ * "Sat Aug 08 2026 03:00:00 GMT+0300 (...)", which both looks wrong in the Sheet
+ * and breaks every `=== week` comparison. Everything goes through here.
+ */
+function asWeek(v) {
+  if (!v) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]') {
+    return Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+  }
+  return String(v).trim().slice(0, 10);
+}
+
 function currentWeek() {
-  return String(metaGet('current_week') || weekStart());
+  return asWeek(metaGet('current_week')) || weekStart();
 }
 
 // ---------------------------------------------------------------- reads
@@ -298,10 +344,10 @@ function planRows(week) {
   var rows = tab(TAB.plan).getDataRange().getValues();
   var out = [];
   for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === week) {
+    if (asWeek(rows[i][0]) === week) {
       out.push({
         row:     i + 1,
-        week:    rows[i][0],
+        week:    asWeek(rows[i][0]),
         day:     rows[i][1],
         slot:    rows[i][2],
         recipe:  rows[i][3],
@@ -319,7 +365,7 @@ function shoppingRows(week) {
   var rows = tab(TAB.shopping).getDataRange().getValues();
   var out = [];
   for (var i = 1; i < rows.length; i++) {
-    if (String(rows[i][0]) === week) {
+    if (asWeek(rows[i][0]) === week) {
       out.push({
         row:     i + 1,
         aisle:   rows[i][1],
@@ -339,7 +385,7 @@ function history(limit) {
   var rows = tab(TAB.plan).getDataRange().getValues();
   var byWeek = {};
   for (var i = 1; i < rows.length; i++) {
-    var w = String(rows[i][0]);
+    var w = asWeek(rows[i][0]);
     if (!w || w >= week) continue;
     if (!byWeek[w]) byWeek[w] = [];
     byWeek[w].push({ day: rows[i][1], slot: rows[i][2], recipe: rows[i][3], rating: rows[i][5] });
@@ -379,7 +425,7 @@ function bootstrap(req) {
 // ---------------------------------------------------------------- writes
 
 function savePlan(req, who) {
-  var week  = req.week || currentWeek();
+  var week  = asWeek(req.week) || currentWeek();
   var meals = req.meals || [];   // [{day, slot, recipe, locked}]
 
   return withLock(function () {
@@ -394,7 +440,9 @@ function savePlan(req, who) {
       return [week, m.day, m.slot, m.recipe, m.locked === true, '', '', m.notes || ''];
     });
     if (rows.length) {
-      tab(TAB.plan).getRange(nextRow(TAB.plan), 1, rows.length, PLAN_WIDTH).setValues(rows);
+      var target = tab(TAB.plan).getRange(nextRow(TAB.plan), 1, rows.length, PLAN_WIDTH);
+      target.offset(0, 0, rows.length, 1).setNumberFormat('@');  // keep Week Start literal
+      target.setValues(rows);
     }
     metaSet({ current_week: week });
     var rev = bump('plan', who);
@@ -403,7 +451,7 @@ function savePlan(req, who) {
 }
 
 function generateShopping(req, who) {
-  var week = req.week || currentWeek();
+  var week = asWeek(req.week) || currentWeek();
 
   var plan = planRows(week);
   if (!plan.length) return { error: 'no_plan', message: 'Confirm a meal plan first' };
@@ -426,7 +474,9 @@ function generateShopping(req, who) {
       return [week, it.aisle, it.item, it.qty, false, who];
     });
     if (rows.length) {
-      tab(TAB.shopping).getRange(nextRow(TAB.shopping), 1, rows.length, SHOP_WIDTH).setValues(rows);
+      var target = tab(TAB.shopping).getRange(nextRow(TAB.shopping), 1, rows.length, SHOP_WIDTH);
+      target.offset(0, 0, rows.length, 1).setNumberFormat('@');
+      target.setValues(rows);
     }
     var rev = bump('shopping', who);
     return { ok: true, week: week, items: rows.length, shoppingRev: rev };
@@ -436,7 +486,7 @@ function generateShopping(req, who) {
 /** Single-cell write — two people can tick different items with zero contention. */
 function toggleItem(req, who) {
   return withLock(function () {
-    var week = req.week || currentWeek();
+    var week = asWeek(req.week) || currentWeek();
     var rows = shoppingRows(week);
     var match = null;
     // Match on aisle + item; the same item can legitimately appear in two aisles.
@@ -454,10 +504,10 @@ function toggleItem(req, who) {
 
 function addItem(req, who) {
   return withLock(function () {
-    var week = req.week || currentWeek();
-    tab(TAB.shopping)
-      .getRange(nextRow(TAB.shopping), 1, 1, SHOP_WIDTH)
-      .setValues([[week, req.aisle || '🫙 Canned & Jarred Goods', req.item, req.qty || '', false, who]]);
+    var week = asWeek(req.week) || currentWeek();
+    var target = tab(TAB.shopping).getRange(nextRow(TAB.shopping), 1, 1, SHOP_WIDTH);
+    target.offset(0, 0, 1, 1).setNumberFormat('@');
+    target.setValues([[week, req.aisle || '🫙 Canned & Jarred Goods', req.item, req.qty || '', false, who]]);
     var rev = bump('shopping', who);
     return { ok: true, item: req.item, shoppingRev: rev };
   });
@@ -492,7 +542,7 @@ function addRecipe(req, who) {
  */
 function rateMeal(req, who) {
   return withLock(function () {
-    var week = req.week || currentWeek();
+    var week = asWeek(req.week) || currentWeek();
     var rows = planRows(week);
     var match = null;
     for (var i = 0; i < rows.length; i++) {
@@ -538,7 +588,7 @@ function deleteWeekRows(name, week) {
   var sheet = tab(name);
   var rows = sheet.getDataRange().getValues();
   for (var i = rows.length - 1; i >= 1; i--) {
-    if (String(rows[i][0]) === week) sheet.deleteRow(i + 1);
+    if (asWeek(rows[i][0]) === week) sheet.deleteRow(i + 1);
   }
 }
 
@@ -588,7 +638,7 @@ var FAMILY_CONTEXT =
   'Rotate proteins across the week: chicken, beef, legumes, vegetarian, occasional fish.';
 
 function generate(req) {
-  var week   = req.week || currentWeek();
+  var week   = asWeek(req.week) || currentWeek();
   var keep   = req.keep || [];             // [{day, slot, recipe}]
   var lib    = recipes();
   var recent = recentMealNames(4);
@@ -661,8 +711,9 @@ function selfTest() {
       FAMILY_PASSPHRASE: prop('FAMILY_PASSPHRASE', null) ? 'set' : 'MISSING',
       TOKEN_SECRET:      prop('TOKEN_SECRET', null) ? 'set' : 'MISSING'
     },
-    weekStart: weekStart(),
-    revisions: revisions()
+    weekStart:   weekStart(),
+    currentWeek: currentWeek(),
+    revisions:   revisions()
   };
   Logger.log(JSON.stringify(checks, null, 2));
   return checks;
