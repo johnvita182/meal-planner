@@ -269,6 +269,41 @@
     padding: 10px 14px; margin-bottom: 14px;
     font-size: 0.8rem; color: var(--green); font-weight: 500;
   }
+
+  /* ── WEEK SELECTOR ── */
+  .week-bar {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: #1b4332; padding: 8px 12px;
+  }
+  .week-bar button {
+    background: rgba(255,255,255,0.12); color: var(--white);
+    border: none; border-radius: 8px;
+    width: 30px; height: 28px; font-size: 0.9rem; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .week-bar button:hover:not(:disabled) { background: rgba(255,255,255,0.28); }
+  .week-bar button:disabled { opacity: 0.25; cursor: default; }
+  .week-bar .week-label {
+    color: var(--white); font-size: 0.8rem; font-weight: 600;
+    min-width: 150px; text-align: center;
+  }
+  .week-bar .week-tag {
+    font-size: 0.62rem; font-weight: 600;
+    padding: 2px 7px; border-radius: 20px;
+    background: var(--gold); color: var(--white);
+  }
+  .week-bar .week-tag.live { background: var(--green-lt); color: #08301c; }
+
+  .history-banner {
+    display: none;
+    background: var(--gold-bg); color: var(--gold);
+    border-radius: 10px; padding: 8px 12px; margin-bottom: 12px;
+    font-size: 0.76rem; font-weight: 500;
+  }
+  body.viewing-history .history-banner { display: block; }
+  body.viewing-history .btn-primary,
+  body.viewing-history .keep-check,
+  body.viewing-history .btn-icon { opacity: 0.4; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -277,6 +312,12 @@
   <h1>🌿 Family Meal Planner</h1>
   <p>Sat – Wed · 2 adults + toddler · Mediterranean</p>
 </header>
+
+<div class="week-bar">
+  <button id="week-prev" onclick="stepWeek(-1)" title="Previous week">◀</button>
+  <span class="week-label" id="week-selector">—</span>
+  <button id="week-next" onclick="stepWeek(1)" title="Next week">▶</button>
+</div>
 
 <nav>
   <button class="active" onclick="showTab('plan')">📅 This Week</button>
@@ -291,6 +332,7 @@
 
   <!-- ── PLAN TAB ── -->
   <div id="tab-plan" class="section active">
+    <div class="history-banner">👀 Viewing a past week — read only. Step forward to the current week to make changes.</div>
     <div class="week-summary" id="week-label">Week of — generate your meals to get started</div>
 
     <div class="card">
@@ -348,6 +390,7 @@
 
   <!-- ── SHOPPING TAB ── -->
   <div id="tab-shopping" class="section">
+    <div class="history-banner">👀 Viewing a past week — read only.</div>
     <div class="card">
       <div class="card-header">
         <h3>🛒 Shopping List</h3>
@@ -691,8 +734,65 @@ const CACHE_KEY = 'mp_cache';
 
 let TOKEN = localStorage.getItem(TOKEN_KEY) || '';
 let WHO   = localStorage.getItem(WHO_KEY) || '';
-let STATE = { week: '', plan: [], shopping: [], revisions: { plan: 0, shopping: 0, recipes: 0 } };
+let STATE = { week: '', currentWeek: '', weeks: [], plan: [], shopping: [], revisions: { plan: 0, shopping: 0, recipes: 0 } };
 let POLL_TIMER = null;
+
+// ── WEEK CONTEXT ──────────────────────────────────────────────
+// One selected week drives every tab. Deliberately not persisted: opening the app
+// should always land on the live week, not wherever you wandered off to last time.
+let SELECTED_WEEK = '';
+
+function isHistoryWeek() {
+  return !!(SELECTED_WEEK && STATE.currentWeek && SELECTED_WEEK < STATE.currentWeek);
+}
+
+function prettyWeek(w) {
+  if (!w) return '—';
+  const d = new Date(w + 'T00:00:00');
+  return 'Week of ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function renderWeekBar() {
+  const label = document.getElementById('week-selector');
+  const prev  = document.getElementById('week-prev');
+  const next  = document.getElementById('week-next');
+  if (!label) return;
+
+  const weeks = STATE.weeks || [];
+  const i = weeks.indexOf(SELECTED_WEEK);
+  const isLive   = SELECTED_WEEK === STATE.currentWeek;
+  const isFuture = SELECTED_WEEK > STATE.currentWeek;
+
+  let tag = '';
+  if (isLive)        tag = '<span class="week-tag live">Now</span>';
+  else if (isFuture) tag = '<span class="week-tag">Upcoming</span>';
+  else               tag = '<span class="week-tag">Past</span>';
+
+  label.innerHTML = prettyWeek(SELECTED_WEEK) + ' ' + tag;
+  if (prev) prev.disabled = i <= 0;
+  if (next) next.disabled = i < 0 || i >= weeks.length - 1;
+
+  document.body.classList.toggle('viewing-history', isHistoryWeek());
+}
+
+async function stepWeek(delta) {
+  const weeks = STATE.weeks || [];
+  const i = weeks.indexOf(SELECTED_WEEK);
+  const target = weeks[i + delta];
+  if (!target) return;
+  await loadWeek(target);
+}
+
+async function loadWeek(week) {
+  if (isDirty() && !confirm('You have unsaved suggestions. Leave them and switch week?')) return;
+  clearDirty();
+  try {
+    const data = await api('bootstrap', { week: week, fresh: true });
+    applyState(data);
+  } catch (e) {
+    showToast('❌ Could not load that week');
+  }
+}
 
 async function api(action, payload) {
   const body = Object.assign({ action: action, token: TOKEN }, payload || {});
@@ -827,7 +927,7 @@ async function boot() {
   refreshApiStatus();
   renderFromCache();
   try {
-    const data = await api('bootstrap');
+    const data = await api('bootstrap');   // no week → the live week, every reload
     applyState(data);
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
     startPolling();
@@ -846,6 +946,8 @@ function renderFromCache() {
 function applyState(data) {
   if (!data || !data.week) return;
   STATE = data;
+  SELECTED_WEEK = data.week;
+  renderWeekBar();
   RECIPE_DB.dinners    = (data.recipes && data.recipes.dinner)    || [];
   RECIPE_DB.breakfasts = (data.recipes && data.recipes.breakfast) || [];
   RECIPE_DB.dinners.forEach(r => { r.instructions = r.steps || r.instructions || []; });
@@ -856,11 +958,9 @@ function applyState(data) {
     showToast('🔄 Someone else made a change — your draft is untouched');
   } else {
     currentPlan = rowsToPlan(data.plan || []);
-    if (currentPlan.dinners.length || currentPlan.breakfasts.length) {
-      renderPlan(currentPlan, 'Week of ' + data.week);
-    }
+    renderPlan(currentPlan, prettyWeek(data.week));
   }
-  if ((data.shopping || []).length) renderShoppingList(rowsToCategories(data.shopping));
+  renderShoppingList(rowsToCategories(data.shopping || []));
   renderRecipeLibrary();
   showSyncNote(data.revisions);
 }
@@ -885,8 +985,9 @@ async function checkForChanges() {
     const r = await api('getRevisions');
     const mine = STATE.revisions || {};
     const theirs = r.revisions || {};
+    // Stay on whichever week is selected; don't yank the user back to "now".
     if (theirs.plan > (mine.plan||0) || theirs.shopping > (mine.shopping||0) || theirs.recipes > (mine.recipes||0)) {
-      const data = await api('bootstrap', { fresh: true });
+      const data = await api('bootstrap', { week: SELECTED_WEEK, fresh: true });
       applyState(data);
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
       showToast('🔄 Updated by ' + (theirs.updatedBy || 'someone else'));
@@ -907,7 +1008,7 @@ async function renderHistory() {
     }
     el.innerHTML = weeks.map(w => `
       <div style="margin-bottom:14px;">
-        <div class="shop-category">Week of ${w.week}</div>
+        <div class="shop-category">${prettyWeek(w.week)}</div>
         ${w.meals.map(m => `
           <div class="history-item">
             <div class="hist-date">${(m.day || '').slice(0,3)}</div>
@@ -921,6 +1022,13 @@ async function renderHistory() {
   } catch (e) {
     el.innerHTML = '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Could not load history.</p>';
   }
+}
+
+/** Past weeks are read-only. Returns true if the action should be blocked. */
+function blockIfHistory() {
+  if (!isHistoryWeek()) return false;
+  showToast('👀 That week is history — step forward to make changes');
+  return true;
 }
 
 function getCheckedSet() {
@@ -943,6 +1051,7 @@ function getOpenIndices(type, regenerateOnly) {
 
 async function generateMeals(regenerateOnly) {
   if (!TOKEN) { showAuth(); return; }
+  if (blockIfHistory()) return;
   const loading = document.getElementById('gen-loading');
   const results = document.getElementById('gen-results');
   if (loading) loading.classList.add('active');
@@ -959,7 +1068,7 @@ async function generateMeals(regenerateOnly) {
   }
 
   try {
-    const out = await api('generate', { week: STATE.week, keep: keep });
+    const out = await api('generate', { week: SELECTED_WEEK, keep: keep });
     const meals = out.meals || [];
     const plan = { breakfasts: [], dinners: [] };
     DAYS.forEach(day => {
@@ -1042,38 +1151,41 @@ function renderSuggestions(plan) {
 
 async function acceptPlan() {
   await savePlanToCloud();
-  renderPlan(currentPlan, 'Week of ' + STATE.week);
+  renderPlan(currentPlan, prettyWeek(SELECTED_WEEK));
   showTab('plan');
   await generateShopping();
   showToast('✅ Plan saved for everyone');
 }
 
 async function savePlanToCloud() {
+  if (blockIfHistory()) return;
   try {
     const res = await api('savePlan', {
-      week: STATE.week,
+      week: SELECTED_WEEK,
       meals: planToRows(currentPlan),
       baseRev: (STATE.revisions || {}).plan
     });
     if (res.error === 'conflict') {
       if (confirm(res.message + '\n\nOverwrite with your version?')) {
-        await api('savePlan', { week: STATE.week, meals: planToRows(currentPlan) });
+        await api('savePlan', { week: SELECTED_WEEK, meals: planToRows(currentPlan) });
       } else {
-        const data = await api('bootstrap', { fresh: true });
+        const data = await api('bootstrap', { week: SELECTED_WEEK, fresh: true });
         applyState(data);
         return;
       }
     }
     if (res.planRev) STATE.revisions.plan = res.planRev;
-    PLAN_DIRTY = false;
+    clearDirty();
   } catch (e) {
     showToast('❌ Could not save: ' + e.message);
   }
 }
 
 function renderPlan(plan, weekLabelOverride) {
-  const label = weekLabelOverride || `Week of ${new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long'})}`;
+  const label = weekLabelOverride || prettyWeek(SELECTED_WEEK);
   document.getElementById('week-label').textContent = label;
+
+  const empty = '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">Nothing planned for this week yet.</p>';
 
   document.getElementById('breakfast-list').innerHTML = plan.breakfasts.map(b => `
     <div class="meal-row">
@@ -1086,7 +1198,7 @@ function renderPlan(plan, weekLabelOverride) {
         ${b.link ? `<a href="${b.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;display:inline-block;margin-top:4px;">View Original →</a>` : ''}
       </div>
     </div>
-  `).join('');
+  `).join('') || empty;
 
   document.getElementById('dinner-list').innerHTML = plan.dinners.map(d => `
     <div class="meal-row">
@@ -1099,7 +1211,7 @@ function renderPlan(plan, weekLabelOverride) {
         ${d.link ? `<a href="${d.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;display:inline-block;margin-top:4px;">View Original →</a>` : ''}
       </div>
     </div>
-  `).join('');
+  `).join('') || empty;
 }
 
 async function confirmPlan() {
@@ -1114,7 +1226,7 @@ function exportShoppingToKeep() {
   const categories = rowsToCategories(STATE.shopping || []);
   if (!categories.length) { showToast('Generate a shopping list first'); return; }
 
-  const lines = ['Shopping List'];
+  const lines = ['Shopping List — ' + prettyWeek(SELECTED_WEEK)];
   categories.forEach(cat => {
     lines.push('', cat.name);
     (cat.items || []).forEach(item => {
@@ -1144,12 +1256,13 @@ function exportShoppingToKeep() {
 }
 
 async function generateShopping() {
+  if (blockIfHistory()) return;
   const el = document.getElementById('shopping-content');
   if (el) el.innerHTML = '<p style="text-align:center;padding:24px;">Building your list…</p>';
   try {
-    const res = await api('generateShopping', { week: STATE.week });
+    const res = await api('generateShopping', { week: SELECTED_WEEK });
     if (res.error) { showToast(res.message || 'Confirm a plan first'); renderShoppingList(fallbackShoppingList()); return; }
-    const data = await api('bootstrap', { fresh: true });
+    const data = await api('bootstrap', { week: SELECTED_WEEK, fresh: true });
     applyState(data);
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
   } catch (e) {
@@ -1174,6 +1287,8 @@ function fallbackShoppingList() {
 let SHOP_INDEX = {};
 
 function renderShoppingList(categories) {
+  const el = document.getElementById('shopping-content');
+  if (!el) return;
   const checkedSet = getCheckedSet();
   SHOP_INDEX = {};
   let html = '';
@@ -1192,7 +1307,8 @@ function renderShoppingList(categories) {
         </div>`;
     });
   });
-  document.getElementById('shopping-content').innerHTML = html;
+  el.innerHTML = html ||
+    '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No shopping list for this week yet. Confirm a plan to build one.</p>';
 }
 
 async function toggleShop(id) {
@@ -1200,9 +1316,10 @@ async function toggleShop(id) {
   const cb  = document.getElementById(id);
   const ref = SHOP_INDEX[id];
   if (!ref) return;
+  if (isHistoryWeek()) { cb.checked = !cb.checked; blockIfHistory(); return; }
   row.classList.toggle('checked', cb.checked);
   try {
-    const res = await api('toggleItem', { week: STATE.week, aisle: ref.aisle, item: ref.item, checked: cb.checked });
+    const res = await api('toggleItem', { week: SELECTED_WEEK, aisle: ref.aisle, item: ref.item, checked: cb.checked });
     const hit = (STATE.shopping || []).find(r => r.item === ref.item && r.aisle === ref.aisle);
     if (hit) hit.checked = cb.checked;
     if (res.shoppingRev) STATE.revisions.shopping = res.shoppingRev;
@@ -1219,15 +1336,16 @@ async function addShoppingItem() {
   const aisleEl = document.getElementById('add-item-aisle');
   const name = nameEl.value.trim();
   if (!name) { showToast('Type an item first'); return; }
+  if (blockIfHistory()) return;
   try {
     const res = await api('addItem', {
-      week: STATE.week,
+      week: SELECTED_WEEK,
       item: name,
       qty: qtyEl.value.trim(),
       aisle: aisleEl.value
     });
     if (res.shoppingRev) STATE.revisions.shopping = res.shoppingRev;
-    const data = await api('bootstrap', { fresh: true });
+    const data = await api('bootstrap', { week: SELECTED_WEEK, fresh: true });
     applyState(data);
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
     nameEl.value = ''; qtyEl.value = '';
@@ -1239,6 +1357,7 @@ async function addShoppingItem() {
 
 // ── SWAP ──────────────────────────────────────────────────────
 function swapMeal(type, idx) {
+  if (blockIfHistory()) return;
   swapTarget = { type, idx };
   const pool = type === 'dinner' ? RECIPE_DB.dinners : RECIPE_DB.breakfasts;
   const current = type === 'dinner' ? currentPlan.dinners[idx].name : currentPlan.breakfasts[idx].name;
@@ -1306,7 +1425,7 @@ async function addInstagramRecipe() {
       time: '30 min',
       servings: 4
     });
-    const data = await api('bootstrap', { fresh: true });
+    const data = await api('bootstrap', { week: SELECTED_WEEK, fresh: true });
     applyState(data);
     localStorage.setItem(CACHE_KEY, JSON.stringify(data));
     document.getElementById('ig-name').value = '';
@@ -1327,7 +1446,7 @@ function renderRecipeLibrary() {
 
   let pool = [];
   if (filter === 'week') {
-    // Just the ten meals on the current plan, in day order.
+    // Just the ten meals on the selected week's plan, in day order.
     pool = currentPlan.breakfasts.map(r => ({ ...r, type: 'breakfast' }))
       .concat(currentPlan.dinners.map(r => ({ ...r, type: 'dinner' })))
       .filter(r => r && r.name);
@@ -1358,7 +1477,7 @@ function renderRecipeLibrary() {
       </div>
     </div>
   `).join('') || (filter === 'week'
-      ? '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No plan confirmed for this week yet. Tap Generate, or switch the filter to All meal types to browse the full library.</p>'
+      ? '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No plan for this week yet. Tap Generate, or switch the filter to All meal types to browse the full library.</p>'
       : '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No recipes match your search.</p>');
 }
 
