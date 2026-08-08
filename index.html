@@ -403,6 +403,7 @@
         <input type="text" id="recipe-search" placeholder="Search by name, protein or ingredient…" oninput="renderRecipeLibrary()">
       </div>
       <select id="recipe-filter" onchange="renderRecipeLibrary()" style="width:100%;padding:8px 10px;border:1.5px solid var(--green-bg);border-radius:8px;font-size:0.82rem;margin-bottom:10px;">
+        <option value="week">📅 This week's meals</option>
         <option value="all">All meal types</option>
         <option value="dinner">Dinners</option>
         <option value="breakfast">Breakfasts</option>
@@ -1325,8 +1326,15 @@ function renderRecipeLibrary() {
   const filter = filterEl.value;
 
   let pool = [];
-  if (filter === 'all' || filter === 'dinner') pool = pool.concat(RECIPE_DB.dinners.map(r => ({ ...r, type: 'dinner' })));
-  if (filter === 'all' || filter === 'breakfast') pool = pool.concat(RECIPE_DB.breakfasts.map(r => ({ ...r, type: 'breakfast' })));
+  if (filter === 'week') {
+    // Just the ten meals on the current plan, in day order.
+    pool = currentPlan.breakfasts.map(r => ({ ...r, type: 'breakfast' }))
+      .concat(currentPlan.dinners.map(r => ({ ...r, type: 'dinner' })))
+      .filter(r => r && r.name);
+  } else {
+    if (filter === 'all' || filter === 'dinner') pool = pool.concat(RECIPE_DB.dinners.map(r => ({ ...r, type: 'dinner' })));
+    if (filter === 'all' || filter === 'breakfast') pool = pool.concat(RECIPE_DB.breakfasts.map(r => ({ ...r, type: 'breakfast' })));
+  }
 
   const filtered = pool.filter(r => {
     if (!search) return true;
@@ -1334,7 +1342,8 @@ function renderRecipeLibrary() {
     return haystack.includes(search);
   });
 
-  document.getElementById('recipe-count-badge').textContent = `${filtered.length} recipes`;
+  document.getElementById('recipe-count-badge').textContent =
+    filter === 'week' ? `${filtered.length} this week` : `${filtered.length} recipes`;
 
   const linkNote = { verified: '', account: ' — account link, not post-specific', unverified: ' — best-effort match, please cross-check' };
 
@@ -1348,7 +1357,9 @@ function renderRecipeLibrary() {
         ${r.link ? `<a href="${r.link}" target="_blank" style="font-size:0.72rem;color:var(--green);font-weight:600;display:inline-block;margin-top:4px;">View Original →</a><span style="font-size:0.68rem;color:var(--muted);">${linkNote[r.linkStatus] || ''}</span>` : ''}
       </div>
     </div>
-  `).join('') || '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No recipes match your search.</p>';
+  `).join('') || (filter === 'week'
+      ? '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No plan confirmed for this week yet. Tap Generate, or switch the filter to All meal types to browse the full library.</p>'
+      : '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No recipes match your search.</p>');
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
