@@ -15,7 +15,6 @@ var TAB = {
   meta:     '_Meta'
 };
 
-// Column indexes (1-based) for the tabs we write to.
 var PLAN_COL   = { week:1, day:2, slot:3, recipe:4, locked:5, rating:6, toddler:7, notes:8 };
 var SHOP_COL   = { week:1, aisle:2, item:3, qty:4, checked:5, by:6 };
 var PLAN_WIDTH = 8;
@@ -57,7 +56,6 @@ function doPost(e) {
   }
 
   try {
-    // login is the only unauthenticated action
     if (action === 'login') return json(login(req));
 
     var who = requireAuth(req.token);
@@ -100,14 +98,48 @@ function json(obj) {
 
 // ---------------------------------------------------------------- auth
 
+var FAIL_LIMIT  = 20;   // failed logins tolerated per window
+var FAIL_WINDOW = 900;  // seconds (15 min)
+
 function login(req) {
   var expected = prop('FAMILY_PASSPHRASE', null);
   if (!expected) throw new Error('FAMILY_PASSPHRASE not set');
+
+  // Brute-force throttle. Apps Script cannot see client IP, so the counter is
+  // global. Threshold is set high enough that normal family use never trips it.
+  if (failureCount() >= FAIL_LIMIT) {
+    return { error: 'throttled',
+             message: 'Too many failed attempts. Try again in a few minutes.' };
+  }
+
   if (String(req.passphrase || '') !== expected) {
+    noteFailure();
     return { error: 'unauthorized', message: 'Wrong passphrase' };
   }
+
+  clearFailures();  // a correct passphrase resets the counter
   var who = String(req.who || 'family').slice(0, 40);
   return { token: mintToken(who), who: who };
+}
+
+function failureCount() {
+  var v = CacheService.getScriptCache().get('login_fails');
+  return v ? Number(v) : 0;
+}
+
+function noteFailure() {
+  var cache = CacheService.getScriptCache();
+  cache.put('login_fails', String(failureCount() + 1), FAIL_WINDOW);
+}
+
+function clearFailures() {
+  CacheService.getScriptCache().remove('login_fails');
+}
+
+/** Run from the editor to lift a throttle immediately. */
+function resetThrottle() {
+  clearFailures();
+  Logger.log('Login throttle cleared.');
 }
 
 function mintToken(who) {
@@ -234,7 +266,8 @@ function readRecipeTab(name, hasProtein) {
       rating:      r[7 + k],
       lastCooked:  r[8 + k],
       notes:       r[9 + k],
-      link:        r[10 + k],
+      link:        linkUrl(r[10 + k]),
+      linkStatus:  linkStatus(r[10 + k]),
       steps:       String(r[11 + k] || '').split('|').map(trim).filter(Boolean),
       type:        hasProtein ? 'Dinner' : 'Breakfast'
     });
@@ -243,6 +276,23 @@ function readRecipeTab(name, hasProtein) {
 }
 
 function trim(s) { return String(s).trim(); }
+
+/**
+ * The Link column stores provenance inline, e.g.
+ *   "https://site.com/x [best-effort match, please cross-check]"
+ * The old page kept these as separate `link` + `linkType` fields. Split them back
+ * out so the UI gets a clean clickable URL plus its status, without editing the Sheet.
+ */
+function linkUrl(cell) {
+  return String(cell || '').split(' [')[0].trim();
+}
+
+function linkStatus(cell) {
+  var s = String(cell || '');
+  if (s.indexOf('account-level') > -1) return 'account';
+  if (s.indexOf('best-effort') > -1)   return 'unverified';
+  return s.trim() ? 'verified' : '';
+}
 
 function planRows(week) {
   var rows = tab(TAB.plan).getDataRange().getValues();
@@ -389,8 +439,9 @@ function toggleItem(req, who) {
     var week = req.week || currentWeek();
     var rows = shoppingRows(week);
     var match = null;
+    // Match on aisle + item; the same item can legitimately appear in two aisles.
     for (var i = 0; i < rows.length; i++) {
-      if (rows[i].item === req.item) { match = rows[i]; break; }
+      if (rows[i].item === req.item && (!req.aisle || rows[i].aisle === req.aisle)) { match = rows[i]; break; }
     }
     if (!match) return { error: 'not_found', item: req.item };
 
@@ -406,7 +457,7 @@ function addItem(req, who) {
     var week = req.week || currentWeek();
     tab(TAB.shopping)
       .getRange(nextRow(TAB.shopping), 1, 1, SHOP_WIDTH)
-      .setValues([[week, req.aisle || '🥫 Other', req.item, req.qty || '', false, who]]);
+      .setValues([[week, req.aisle || '🫙 Canned & Jarred Goods', req.item, req.qty || '', false, who]]);
     var rev = bump('shopping', who);
     return { ok: true, item: req.item, shoppingRev: rev };
   });
@@ -556,6 +607,7 @@ function generate(req) {
     'ALREADY LOCKED (keep exactly as given):\n' + JSON.stringify(keep) + '\n\n' +
     'Fill the remaining slots: ' + DAYS.join(', ') + ' × Breakfast and Dinner.\n' +
     'Pull roughly 3 meals from the library and invent about 2 new ones.\n' +
+    'Never repeat a dish within the week.\n' +
     'Mark invented meals with "isNew": true and include ingredients and steps for them.\n\n' +
     'JSON shape:\n' +
     '{"meals":[{"day":"Saturday","slot":"Dinner","recipe":"Name","isNew":false,' +
@@ -576,9 +628,19 @@ function askClaudeForShoppingList(ingredients) {
     'cooking each meal with enough for next-day lunch leftovers.\n\n' +
     'Use ONLY the ingredients listed. Do not add anything that is not here.\n' +
     'Combine duplicates and sum quantities.\n\n' +
-    'Aisles, use exactly these labels:\n' +
-    '🥦 Produce, 🥩 Meat & Fish, 🥛 Dairy & Eggs, 🌾 Grains & Pantry, ' +
-    '🫙 Spices & Condiments, 🥫 Tins & Jars\n\n' +
+    'Aisles, use exactly these labels and this order — they follow the layout of\n' +
+    'Tamimi/Danube/Panda, so the list reads in shopping order:\n' +
+    '🥦 Produce\n' +
+    '🥩 Meat & Seafood\n' +
+    '🧊 Frozen & Chilled\n' +
+    '🥛 Dairy & Eggs\n' +
+    '🥥 Coconut & Plant-based\n' +
+    '🌾 Grains, Bread & Pasta\n' +
+    '🥜 Nuts, Seeds & Nut Butters\n' +
+    '🫙 Canned & Jarred Goods\n' +
+    '🧴 Sauces, Oils & Condiments\n' +
+    '🧂 Baking & Spices\n' +
+    'Omit any aisle that has no items.\n\n' +
     JSON.stringify(ingredients, null, 1) + '\n\n' +
     'JSON shape:\n{"items":[{"aisle":"🥦 Produce","item":"Carrots","qty":"4"}]}';
 
