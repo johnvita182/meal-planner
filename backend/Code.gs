@@ -241,7 +241,8 @@ function bump(which, who) {
   updates.updated_at = new Date().toISOString();
   updates.updated_by = who || 'app';
   metaSet(updates);
-  CacheService.getScriptCache().remove('bootstrap');
+  // No cache invalidation needed: bootstrap cache keys embed the revision numbers,
+  // so bumping a revision orphans the old entry automatically.
   return updates[key];
 }
 
@@ -400,25 +401,53 @@ function recentMealNames(weeks) {
   }, []).filter(Boolean);
 }
 
+/**
+ * Every week that should appear in the client's week picker: every week with a
+ * saved plan, plus the live week, plus next Saturday so a plan can be started early.
+ */
+function availableWeeks() {
+  var rows = tab(TAB.plan).getDataRange().getValues();
+  var seen = {};
+  for (var i = 1; i < rows.length; i++) {
+    var w = asWeek(rows[i][0]);
+    if (w) seen[w] = true;
+  }
+  var live = currentWeek();
+  seen[live] = true;
+  seen[weekStart(new Date(new Date(live + 'T00:00:00Z').getTime() + 7 * 86400000))] = true;
+  return Object.keys(seen).sort();
+}
+
+/**
+ * `req.week` lets the client page through weeks; omitted means the live week.
+ * The cache key carries the revision numbers, so a stale entry can never be
+ * served after a write — no explicit invalidation needed.
+ */
 function bootstrap(req) {
+  var week = asWeek(req.week) || currentWeek();
+  var rev  = revisions();
+  var key  = ['bs', week, rev.plan, rev.shopping, rev.recipes].join('_');
+
   var cache = CacheService.getScriptCache();
-  var hit = cache.get('bootstrap');
+  var hit = cache.get(key);
   if (hit && !req.fresh) {
     var parsed = JSON.parse(hit);
     parsed.cached = true;
     return parsed;
   }
-  var week = currentWeek();
+
   var payload = {
-    week:      week,
-    recipes:   recipes(),
-    plan:      planRows(week),
-    shopping:  shoppingRows(week),
-    revisions: revisions(),
-    days:      DAYS,
-    slots:     SLOTS
+    week:        week,
+    currentWeek: currentWeek(),   // which week the server considers live
+    weeks:       availableWeeks(),
+    recipes:     recipes(),
+    plan:        planRows(week),
+    shopping:    shoppingRows(week),
+    revisions:   rev,
+    days:        DAYS,
+    slots:       SLOTS
   };
-  cache.put('bootstrap', JSON.stringify(payload), CACHE_TTL);
+  cache.put(key, JSON.stringify(payload), CACHE_TTL);
   return payload;
 }
 
@@ -711,9 +740,10 @@ function selfTest() {
       FAMILY_PASSPHRASE: prop('FAMILY_PASSPHRASE', null) ? 'set' : 'MISSING',
       TOKEN_SECRET:      prop('TOKEN_SECRET', null) ? 'set' : 'MISSING'
     },
-    weekStart:   weekStart(),
-    currentWeek: currentWeek(),
-    revisions:   revisions()
+    weekStart:      weekStart(),
+    currentWeek:    currentWeek(),
+    availableWeeks: availableWeeks(),
+    revisions:      revisions()
   };
   Logger.log(JSON.stringify(checks, null, 2));
   return checks;
