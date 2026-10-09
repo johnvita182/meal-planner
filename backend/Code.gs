@@ -664,7 +664,7 @@ var FAMILY_CONTEXT =
   'Meals are Breakfast + Dinner, Saturday to Wednesday. Portions cover next-day ' +
   'lunch leftovers (3 adult + 1 toddler per meal).\n' +
   'Riyadh is very hot — prefer light, fresh meals.\n' +
-  'Rotate proteins across the week: chicken, beef, legumes, vegetarian, occasional fish.';
+  'Rotate proteins across the week: chicken, beef, legumes, vegetarian, and salmon once a week.';
 
 function generate(req) {
   var week   = asWeek(req.week) || currentWeek();
@@ -674,6 +674,10 @@ function generate(req) {
 
   var dinnerNames    = lib.dinner.map(function (r) { return r.name; });
   var breakfastNames = lib.breakfast.map(function (r) { return r.name; });
+  var salmonNames    = lib.dinner.filter(function (r) {
+    return /salmon/i.test(r.name + ' ' + r.protein);
+  }).map(function (r) { return r.name; });
+  var oatsNames      = breakfastNames.filter(function (n) { return /overnight oats|blended oats/i.test(n); });
 
   var system = 'You are a family meal planner. ' + FAMILY_CONTEXT +
     '\n\nRespond with JSON only, no prose.';
@@ -686,7 +690,15 @@ function generate(req) {
     'ALREADY LOCKED (keep exactly as given):\n' + JSON.stringify(keep) + '\n\n' +
     'Fill the remaining slots: ' + DAYS.join(', ') + ' × Breakfast and Dinner.\n' +
     'Pull roughly 3 meals from the library and invent about 2 new ones.\n' +
-    'Never repeat a dish within the week.\n' +
+    'Never repeat a dish within the week.\n\n' +
+    'WEEKLY REQUIREMENTS (always apply; these override the 4-week no-repeat rule if needed):\n' +
+    '1. Exactly one dinner must be salmon. Library salmon dinners: ' + (salmonNames.join('; ') || '(none)') + '. ' +
+    'Prefer one not in the recent list; if all were cooked recently, invent a new toddler-friendly ' +
+    'salmon dinner (isNew true). Flag fish for the toddler in "toddler".\n' +
+    '2. At least 3 of the 5 breakfasts must be overnight oats, each a different recipe. ' +
+    'Library overnight oats: ' + (oatsNames.join('; ') || '(none)') + '. ' +
+    'Prefer the least recently cooked; repeats from earlier weeks are fine.\n' +
+    'If a locked meal already satisfies a requirement, count it.\n\n' +
     'Mark invented meals with "isNew": true and include ingredients and steps for them.\n\n' +
     'JSON shape:\n' +
     '{"meals":[{"day":"Saturday","slot":"Dinner","recipe":"Name","isNew":false,' +

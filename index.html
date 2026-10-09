@@ -712,6 +712,93 @@ function enforcePlanRules(meals, pool, day0Names) {
   return out;
 }
 
+// ── WEEKLY REQUIREMENTS ───────────────────────────────────────
+// Every generated week must contain 1 salmon dinner and at least 3 different
+// overnight-oats breakfasts. The server prompt asks for this; these functions
+// guarantee it. Kept (checked) meals are never replaced.
+const MIN_SALMON_DINNERS = 1;
+const MIN_OATS_BREAKFASTS = 3;
+
+function isSalmon(m) {
+  if (!m) return false;
+  const hay = [m.name, m.protein, (m.ingredients || []).join(' ')].join(' ').toLowerCase();
+  return hay.includes('salmon');
+}
+
+function isOvernightOats(m) {
+  const n = ((m && m.name) || '').toLowerCase();
+  return /overnight oats|blended oats/.test(n);
+}
+
+// Rough protein bucket, so the salmon replaces a protein that already repeats.
+function proteinBucket(m) {
+  const p = ((m.protein || '') + ' ' + (m.name || '')).toLowerCase();
+  for (const k of ['chicken','beef','lamb','turkey','tofu','fish','tuna','vegetarian','vegan']) {
+    if (p.includes(k)) return k;
+  }
+  return p.trim() || 'other';
+}
+
+/**
+ * Make sure `meals` contains at least `min` items matching `test`.
+ * Replaces non-kept, non-matching slots with database recipes that match.
+ * `chooseSlot` ranks candidate indices (first = replaced first).
+ */
+function ensureMinimum(meals, pool, test, min, keptIdx, usedNames, chooseSlot) {
+  let have = meals.filter(test).length;
+  if (have >= min) return meals;
+  const candidates = pool.filter(r => test(r) && !isExcluded(r.name) && !usedNames.has(r.name))
+                         .sort(() => Math.random() - 0.5);
+  let slots = meals.map((m, i) => i).filter(i => !keptIdx.has(i) && !test(meals[i]));
+  if (chooseSlot) slots = chooseSlot(slots, meals);
+  while (have < min && slots.length && candidates.length) {
+    const i = slots.shift();
+    const sub = candidates.shift();
+    usedNames.delete(meals[i].name);
+    usedNames.add(sub.name);
+    meals[i] = Object.assign({}, sub, { day: meals[i].day, note: 'added — weekly requirement' });
+    have++;
+  }
+  return meals;
+}
+
+function enforceWeeklyRequirements(plan, keptB, keptD) {
+  const used = new Set(plan.dinners.concat(plan.breakfasts).map(m => m.name));
+
+  plan.dinners = ensureMinimum(plan.dinners, RECIPE_DB.dinners, isSalmon,
+    MIN_SALMON_DINNERS, keptD, used,
+    (slots, meals) => {
+      // Prefer replacing a dinner whose protein already appears twice this week.
+      const count = {};
+      meals.forEach(m => { const b = proteinBucket(m); count[b] = (count[b] || 0) + 1; });
+      return slots.sort((a, b) => (count[proteinBucket(meals[b])] || 0) - (count[proteinBucket(meals[a])] || 0));
+    });
+
+  plan.breakfasts = ensureMinimum(plan.breakfasts, RECIPE_DB.breakfasts, isOvernightOats,
+    MIN_OATS_BREAKFASTS, keptB, used);
+
+  // Oats must be different recipes — swap any repeated oats for an unused one.
+  const seen = new Set();
+  plan.breakfasts.forEach((m, i) => {
+    if (!isOvernightOats(m)) return;
+    if (seen.has(m.name) && !keptB.has(i)) {
+      const [sub] = RECIPE_DB.breakfasts.filter(r => isOvernightOats(r) && !used.has(r.name));
+      if (sub) { used.add(sub.name); plan.breakfasts[i] = Object.assign({}, sub, { day: m.day, note: 'added — weekly requirement' }); }
+    }
+    seen.add(plan.breakfasts[i].name);
+  });
+  return plan;
+}
+
+/** Friendly warning if a manual swap breaks a weekly requirement. */
+function weeklyRequirementWarning(plan) {
+  const msgs = [];
+  if (plan.dinners.filter(isSalmon).length < MIN_SALMON_DINNERS) msgs.push('no salmon dinner');
+  const oats = new Set(plan.breakfasts.filter(isOvernightOats).map(m => m.name)).size;
+  if (oats < MIN_OATS_BREAKFASTS) msgs.push(`only ${oats} overnight oats`);
+  return msgs.length ? '⚠️ Heads up: ' + msgs.join(' and ') + ' this week' : '';
+}
+
 // ── TABS ──────────────────────────────────────────────────────
 function showTab(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -1084,6 +1171,12 @@ async function generateMeals(regenerateOnly) {
     plan.breakfasts = enforcePlanRules(plan.breakfasts, RECIPE_DB.breakfasts,
                                        plan.dinners.map(m => m.name));
 
+    // Weekly must-haves: 1 salmon dinner, 3+ different overnight oats.
+    const keptIdx = slot => new Set(keep.filter(k => k.slot === slot).map(k => DAYS.indexOf(k.day)));
+    enforceWeeklyRequirements(plan, keptIdx('Breakfast'), keptIdx('Dinner'));
+    const warn = weeklyRequirementWarning(plan);
+    if (warn) showToast(warn + ' (checked meals left as-is)');
+
     currentPlan = plan;
     markDirty();
     renderSuggestions(currentPlan);
@@ -1400,7 +1493,7 @@ function doSwap(recipe) {
   markDirty();
   renderSuggestions(currentPlan);
   closeSwap();
-  showToast('✅ Meal swapped!');
+  showToast(weeklyRequirementWarning(currentPlan) || '✅ Meal swapped!');
 }
 
 function closeSwap() {
