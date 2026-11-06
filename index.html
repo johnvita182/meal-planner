@@ -620,7 +620,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── STATE ───────────────────────────────────────────────────────
+// ── STATE ──────────────────────────────
 const FAMILY = {
   location: "Saudi Arabia",
   diet: "Mediterranean, no pork, whole foods, toddler 18 months",
@@ -660,7 +660,7 @@ function isDirty() {
   return true;
 }
 
-// ── PLAN RULES ─────────────────────────────────────────────────
+// ── PLAN RULES ────────────────────────────
 // The server is *asked* to honour these; this enforces them client-side so a
 // stray model response can't put tagine, or the same dish twice, into your week.
 const DB_COUNT_PER_5  = 3;   // pulled straight from the recipe database
@@ -694,9 +694,12 @@ function enforcePlanRules(meals, pool, day0Names) {
   meals.forEach(m => {
     const dup = used.has(m.name);
     const banned = isExcluded(m.name);
-    const overNewQuota = m.isNew && newCount >= allowedNew;
+    // === true matters: the Sheet's "New?" column used to leak the string
+    // "New ✨" in here, which made every library meal look newly invented and
+    // got 6 of 10 meals silently replaced with random database picks.
+    const overNewQuota = m.isNew === true && newCount >= allowedNew;
     if (!dup && !banned && !overNewQuota) {
-      if (m.isNew) newCount++;
+      if (m.isNew === true) newCount++;
       used.add(m.name);
       out.push(m);
       return;
@@ -712,7 +715,34 @@ function enforcePlanRules(meals, pool, day0Names) {
   return out;
 }
 
-// ── WEEKLY REQUIREMENTS ───────────────────────────────────────
+/**
+ * Fill any day/slot the generator left empty with a library pick, so an
+ * incomplete response degrades into a usable week instead of a broken one.
+ * Returns how many slots were filled.
+ */
+function backfillPlan(plan) {
+  let filled = 0;
+  const used = new Set(plan.breakfasts.concat(plan.dinners).filter(Boolean).map(m => m.name));
+  const fill = (arr, pool) => {
+    for (let i = 0; i < DAYS.length; i++) {
+      if (arr[i]) continue;
+      const [sub] = pickFromDB(pool, used, 1);
+      if (!sub) continue;
+      used.add(sub.name);
+      arr[i] = Object.assign({}, sub, { day: DAYS[i], note: 'filled from your database' });
+      filled++;
+    }
+  };
+  fill(plan.breakfasts, RECIPE_DB.breakfasts);
+  fill(plan.dinners, RECIPE_DB.dinners);
+  // Anything still empty means the library ran dry; drop it so the rest of the
+  // pipeline only ever sees a dense array.
+  plan.breakfasts = plan.breakfasts.filter(Boolean);
+  plan.dinners    = plan.dinners.filter(Boolean);
+  return filled;
+}
+
+// ── WEEKLY REQUIREMENTS ───────────────────────
 // Every generated week must contain 1 salmon dinner and at least 3 different
 // overnight-oats breakfasts. The server prompt asks for this; these functions
 // guarantee it. Kept (checked) meals are never replaced.
@@ -799,7 +829,7 @@ function weeklyRequirementWarning(plan) {
   return msgs.length ? '⚠️ Heads up: ' + msgs.join(' and ') + ' this week' : '';
 }
 
-// ── TABS ──────────────────────────────────────────────────────
+// ── TABS ──────────────────────────────
 function showTab(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -811,7 +841,7 @@ function showTab(id) {
   if (id === 'history') renderHistory();
 }
 
-// ── CLOUD API LAYER ────────────────────────────────────────────
+// ── CLOUD API LAYER ──────────────────────────
 // All shared state lives in the Google Sheet, reached through the Apps Script
 // Web App. localStorage is now only a token cache and an offline read cache.
 const API_URL = 'https://script.google.com/macros/s/AKfycbxOa7SojwA30enIlXYEMtdDOn9l1nRh7GnPIdpGZI4_wjGt0XcPhpquoKe5RseJiS97Cw/exec';
@@ -824,7 +854,7 @@ let WHO   = localStorage.getItem(WHO_KEY) || '';
 let STATE = { week: '', currentWeek: '', weeks: [], plan: [], shopping: [], revisions: { plan: 0, shopping: 0, recipes: 0 } };
 let POLL_TIMER = null;
 
-// ── WEEK CONTEXT ──────────────────────────────────────────────
+// ── WEEK CONTEXT ───────────────────────────
 // One selected week drives every tab. Deliberately not persisted: opening the app
 // should always land on the live week, not wherever you wandered off to last time.
 let SELECTED_WEEK = '';
@@ -912,7 +942,7 @@ function setOffline(state) {
   if (!state) showToast('✅ Back online');
 }
 
-// ── AUTH ──────────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────
 function showAuth() { document.getElementById('auth-overlay').style.display = 'flex'; }
 function hideAuth() { document.getElementById('auth-overlay').style.display = 'none'; }
 
@@ -960,7 +990,7 @@ function refreshApiStatus() {
   }
 }
 
-// ── SHAPE ADAPTERS ──────────────────────────────────────────────
+// ── SHAPE ADAPTERS ────────────────────────────
 // The Sheet stores one row per meal. The UI expects { breakfasts:[5], dinners:[5] }.
 function rowsToPlan(rows) {
   const plan = { breakfasts: [], dinners: [] };
@@ -1007,7 +1037,7 @@ function rowsToCategories(rows) {
   return order.map(a => ({ name: a, items: byAisle[a] }));
 }
 
-// ── BOOT + SYNC ────────────────────────────────────────────────
+// ── BOOT + SYNC ───────────────────────────
 async function boot() {
   if (!TOKEN) { showAuth(); return; }
   hideAuth();
@@ -1082,7 +1112,7 @@ async function checkForChanges() {
   } catch (e) {}
 }
 
-// ── HISTORY ───────────────────────────────────────────────────
+// ── HISTORY ────────────────────────────
 async function renderHistory() {
   const el = document.getElementById('history-list');
   if (!el || !TOKEN) return;
@@ -1124,7 +1154,7 @@ function getCheckedSet() {
 
 window.addEventListener('DOMContentLoaded', () => { boot(); });
 
-// ── GENERATE ─────────────────────────────────────────────────
+// ── GENERATE ───────────────────────────
 function getOpenIndices(type, regenerateOnly) {
   // Returns which of the 5 day-slots need (re)generating.
   if (!regenerateOnly) return [0,1,2,3,4];
@@ -1156,14 +1186,37 @@ async function generateMeals(regenerateOnly) {
 
   try {
     const out = await api('generate', { week: SELECTED_WEEK, keep: keep });
+    if (out.error) throw new Error(out.message || out.error);
     const meals = out.meals || [];
+    if (!meals.length) throw new Error('the generator returned no meals. Try again.');
+
+    // Match tolerantly. The model is asked for "Saturday"/"Breakfast" but may
+    // answer "Sat" or "breakfast"; an exact-match lookup silently discarded the
+    // entire week when it did. Compare on a lowercase 3-letter stem instead.
+    const stem = s => String(s || '').trim().toLowerCase().slice(0, 3);
+    const matches = (m, day, slot) => stem(m.day) === stem(day) && stem(m.slot) === stem(slot);
+
+    // Indexed by day rather than pushed, so a day the model skips leaves a
+    // visible hole to backfill instead of shifting every later day up a slot.
     const plan = { breakfasts: [], dinners: [] };
-    DAYS.forEach(day => {
-      const b = meals.find(m => m.day === day && m.slot === 'Breakfast');
-      const d = meals.find(m => m.day === day && m.slot === 'Dinner');
-      if (b) plan.breakfasts.push(mealToRecipe(b, day));
-      if (d) plan.dinners.push(mealToRecipe(d, day));
+    DAYS.forEach((day, i) => {
+      const b = meals.find(m => matches(m, day, 'Breakfast'));
+      const d = meals.find(m => matches(m, day, 'Dinner'));
+      plan.breakfasts[i] = b ? mealToRecipe(b, day) : null;
+      plan.dinners[i]    = d ? mealToRecipe(d, day) : null;
     });
+
+    // If nothing matched at all, say exactly what came back rather than letting
+    // the weekly-requirement warning take the blame for an empty week.
+    const matched = plan.breakfasts.concat(plan.dinners).filter(Boolean).length;
+    if (!matched) {
+      const sawDays  = [...new Set(meals.map(m => m.day))].join(', ')  || '(none)';
+      const sawSlots = [...new Set(meals.map(m => m.slot))].join(', ') || '(none)';
+      throw new Error('got ' + meals.length + ' meals but none matched a day. Days seen: '
+                      + sawDays + '. Slots seen: ' + sawSlots);
+    }
+
+    const filledCount = backfillPlan(plan);
 
     // Enforce the rules the prompt only asks for: no exclusions, no duplicates,
     // and the intended database/new ratio. Dinners first so they claim the pool.
@@ -1174,8 +1227,11 @@ async function generateMeals(regenerateOnly) {
     // Weekly must-haves: 1 salmon dinner, 3+ different overnight oats.
     const keptIdx = slot => new Set(keep.filter(k => k.slot === slot).map(k => DAYS.indexOf(k.day)));
     enforceWeeklyRequirements(plan, keptIdx('Breakfast'), keptIdx('Dinner'));
+    const notes = [];
+    if (filledCount) notes.push(filledCount + (filledCount === 1 ? ' slot' : ' slots') + ' filled from your database');
     const warn = weeklyRequirementWarning(plan);
-    if (warn) showToast(warn + ' (checked meals left as-is)');
+    if (warn) notes.push(warn.replace('⚠️ Heads up: ', ''));
+    if (notes.length) showToast('⚠️ ' + notes.join(' · '));
 
     currentPlan = plan;
     markDirty();
@@ -1314,7 +1370,7 @@ async function confirmPlan() {
   await generateShopping();
 }
 
-// ── SHOPPING LIST ──────────────────────────────────────────────
+// ── SHOPPING LIST ───────────────────────────
 function exportShoppingToKeep() {
   const categories = rowsToCategories(STATE.shopping || []);
   if (!categories.length) { showToast('Generate a shopping list first'); return; }
@@ -1448,7 +1504,7 @@ async function addShoppingItem() {
   }
 }
 
-// ── SWAP ──────────────────────────────────────────────────────
+// ── SWAP ──────────────────────────────
 function swapMeal(type, idx) {
   if (blockIfHistory()) return;
   swapTarget = { type, idx };
@@ -1501,7 +1557,7 @@ function closeSwap() {
   swapTarget = null;
 }
 
-// ── ADD RECIPE ───────────────────────────────────────────────
+// ── ADD RECIPE ──────────────────────────
 async function addInstagramRecipe() {
   const name = document.getElementById('ig-name').value.trim();
   const ingredients = document.getElementById('ig-ingredients').value.trim();
@@ -1529,7 +1585,7 @@ async function addInstagramRecipe() {
   }
 }
 
-// ── RECIPE LIBRARY ─────────────────────────────────────────────
+// ── RECIPE LIBRARY ──────────────────────────
 function renderRecipeLibrary() {
   const searchEl = document.getElementById('recipe-search');
   const filterEl = document.getElementById('recipe-filter');
@@ -1574,7 +1630,7 @@ function renderRecipeLibrary() {
       : '<p style="color:var(--muted);font-size:0.82rem;padding:8px 0">No recipes match your search.</p>');
 }
 
-// ── TOAST ─────────────────────────────────────────────────────
+// ── TOAST ──────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
