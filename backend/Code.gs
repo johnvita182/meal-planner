@@ -279,8 +279,28 @@ function asWeek(v) {
   return String(v).trim().slice(0, 10);
 }
 
+/**
+ * The week the app treats as live, derived from today's date.
+ *
+ * Saturday-Thursday  -> the Sat-start block containing today.
+ * Friday             -> the UPCOMING Saturday, because Friday 9am is when this
+ *                       household plans the week it is about to cook.
+ *
+ * `_Meta.current_week` is deliberately NOT consulted here. It used to be, which
+ * pinned the app to whatever week was last saved and left it drifting weeks
+ * behind the calendar. It is now only a record of the last save.
+ */
+function liveWeek(date) {
+  var now = date || new Date();
+  var dow = Number(Utilities.formatDate(now, TZ, 'u'));   // 1=Mon .. 7=Sun
+  if (dow === 5) {                                        // Friday: look ahead
+    return Utilities.formatDate(new Date(now.getTime() + 86400000), TZ, 'yyyy-MM-dd');
+  }
+  return weekStart(now);
+}
+
 function currentWeek() {
-  return asWeek(metaGet('current_week')) || weekStart();
+  return liveWeek();
 }
 
 // ---------------------------------------------------------------- reads
@@ -305,7 +325,8 @@ function readRecipeTab(name, hasProtein) {
       name:        r[0],
       source:      r[1],
       protein:     hasProtein ? r[2] : '',
-      isNew:       r[2 + k],
+      newFlag:     r[2 + k],   // the Sheet's "New?" column, display only
+      isNew:       false,      // a library recipe is never a *newly invented* meal
       ingredients: String(r[3 + k] || '').split(';').map(trim).filter(Boolean),
       toddler:     r[4 + k],
       time:        r[5 + k],
@@ -670,7 +691,12 @@ function generate(req) {
   var week   = asWeek(req.week) || currentWeek();
   var keep   = req.keep || [];             // [{day, slot, recipe}]
   var lib    = recipes();
-  var recent = recentMealNames(4);
+  // Salmon and overnight oats are required every week, so excluding them as
+  // "cooked recently" asks the model for something impossible. Drop them from
+  // the no-repeat list rather than relying on prose to override it.
+  var recent = recentMealNames(4).filter(function (n) {
+    return !/salmon/i.test(n) && !/overnight oats|blended oats/i.test(n);
+  });
 
   var dinnerNames    = lib.dinner.map(function (r) { return r.name; });
   var breakfastNames = lib.breakfast.map(function (r) { return r.name; });
